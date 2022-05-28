@@ -8,7 +8,7 @@ namespace money_problem.Tests
     public class MoneyShould
     {
         [Fact(DisplayName = "5 USD + 10 USD = 15 USD")]
-        public void Add()
+        public void AddInUsd()
         {
             double? result = MoneyCalculator.Add(5, USD, 10);
             result.Should()
@@ -16,7 +16,7 @@ namespace money_problem.Tests
         }
         
         [Fact(DisplayName = "10 EUR x 2 = 20 EUR")]
-        public void Multiply()
+        public void MultiplyInEuros()
         {
             MoneyCalculator
                 .Times(10, EUR, 2)
@@ -25,7 +25,7 @@ namespace money_problem.Tests
         }
 
         [Fact(DisplayName = "4002 KRW / 4 = 1000.5 KRW")]
-        public void Divide()
+        public void DivideInKoreanWons()
         {
             MoneyCalculator
                 .Divide(4002, KRW, 4)

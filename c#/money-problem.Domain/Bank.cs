@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 
 namespace money_problem.Domain
 {
-    public class Bank
+    public sealed class Bank
     {
         private readonly Dictionary<string, double> _exchangeRates;
 
@@ -21,15 +21,15 @@ namespace money_problem.Domain
 
         private static string KeyFor(Currency from, Currency to) => $"{from}->{to}";
 
-        public double Convert(double amount, Currency fromCurrency, Currency toCurrency) =>
-            CanConvert(fromCurrency, toCurrency)
-                ? ConvertSafely(amount, fromCurrency, toCurrency)
-                : throw new MissingExchangeRateException(fromCurrency, toCurrency);
+        public double Convert(double amount, Currency from, Currency to) =>
+            CanConvert(from, to)
+                ? ConvertSafely(amount, from, to)
+                : throw new MissingExchangeRateException(from, to);
 
-        private double ConvertSafely(double amount, Currency fromCurrency, Currency toCurrency) =>
-            toCurrency == fromCurrency
+        private double ConvertSafely(double amount, Currency from, Currency to) =>
+            to == from
                 ? amount
-                : amount * _exchangeRates[KeyFor(fromCurrency, toCurrency)];
+                : amount * _exchangeRates[KeyFor(from, to)];
 
         private bool CanConvert(Currency from, Currency to) =>
             from == to || _exchangeRates.ContainsKey(KeyFor(from, to));

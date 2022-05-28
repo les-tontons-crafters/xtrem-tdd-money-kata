@@ -18,7 +18,7 @@ namespace money_problem.Tests
         }
 
         [Fact(DisplayName = "10 EUR -> EUR = 10 EUR")]
-        public void ConvertMoneyInTheSameCurrency()
+        public void ConvertMoneyInSameCurrency()
         {
             _bank.Convert(10, EUR, EUR)
                 .Should()
