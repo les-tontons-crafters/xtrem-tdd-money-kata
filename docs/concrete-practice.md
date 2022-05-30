@@ -23,6 +23,17 @@ To build it, we'd need to do simple arithmetic operations on numbers :
 1 USD + 1100 KRW = 2200 KRW
 ```
 
+* We can use this table to determine exchange rates :
+
+| From | To   | Rate    |
+|------|------|---------|
+| EUR  | USD  | 1.2     |
+| USD  | EUR  | 0.82    |
+| USD  | KRW  | 1100    |
+| KRW  | EUR  | 0.0009  |
+| EUR  | KRW  | 1344    |
+| KRW  | EUR  | 0.00073 |
+
 ## List of Features to implement
 We have already started the implementation by using TDD. We have discovered examples that helped us drive our implementation.
 
