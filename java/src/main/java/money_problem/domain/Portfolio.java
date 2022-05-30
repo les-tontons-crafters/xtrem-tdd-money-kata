@@ -18,7 +18,7 @@ public class Portfolio {
         });
     }
 
-    public double evaluate2(Bank bank, Currency toCurrency) throws MissingExchangeRatesException {
+    public double evaluate(Bank bank, Currency toCurrency) throws MissingExchangeRatesException {
         var convertedResult = 0d;
         var missingExchangeRates = new ArrayList<MissingExchangeRateException>();
 

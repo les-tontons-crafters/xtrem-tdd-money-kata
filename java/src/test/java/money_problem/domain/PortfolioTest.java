@@ -24,7 +24,7 @@ class PortfolioTest {
         portfolio.add(5, USD);
         portfolio.add(10, USD);
 
-        assertThat(portfolio.evaluate2(bank, USD))
+        assertThat(portfolio.evaluate(bank, USD))
                 .isEqualTo(15);
     }
 
@@ -35,7 +35,7 @@ class PortfolioTest {
         portfolio.add(5, USD);
         portfolio.add(10, EUR);
 
-        assertThat(portfolio.evaluate2(bank, USD))
+        assertThat(portfolio.evaluate(bank, USD))
                 .isEqualTo(17);
     }
 
@@ -46,7 +46,7 @@ class PortfolioTest {
         portfolio.add(1, USD);
         portfolio.add(1100, KRW);
 
-        assertThat(portfolio.evaluate2(bank, KRW))
+        assertThat(portfolio.evaluate(bank, KRW))
                 .isEqualTo(2200);
     }
 
@@ -58,7 +58,7 @@ class PortfolioTest {
         portfolio.add(10, EUR);
         portfolio.add(4, EUR);
 
-        assertThat(portfolio.evaluate2(bank, USD))
+        assertThat(portfolio.evaluate(bank, USD))
                 .isEqualTo(21.8);
     }
 
@@ -70,7 +70,7 @@ class PortfolioTest {
         portfolio.add(1, USD);
         portfolio.add(1, KRW);
 
-        assertThatThrownBy(() -> portfolio.evaluate2(bank, EUR))
+        assertThatThrownBy(() -> portfolio.evaluate(bank, EUR))
                 .isInstanceOf(MissingExchangeRatesException.class)
                 .hasMessage("Missing exchange rate(s): [USD->EUR],[KRW->EUR]");
     }
