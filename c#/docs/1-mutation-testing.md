@@ -43,5 +43,8 @@
 
 ![Stryker Report Fixed](img/MutantMoneyCalculatorFixed.png)
 
+- Congratulations you have killed your first mutant !!!
+![sentinel](img/sentinel-x-men.jpg)
+
 - Why you should focus on good assertion?
 	- Take a look at the [Test Desiderata](https://kentbeck.github.io/TestDesiderata/)
