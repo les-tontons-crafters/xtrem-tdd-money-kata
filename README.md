@@ -28,7 +28,7 @@ By overcoming those constraints you will learn new ways of designing your code t
 You need to install the runtime environment for the language you prefer use:
 
 - C# : .NET 6
-- java : 17
+- java : SDK 17
 
 #### Workshop structure
 We have structured this workshop using the [4C model](https://www.bowperson.com/2017/11/reposting-a-quick-guide-to-the-4cs-map/) :
