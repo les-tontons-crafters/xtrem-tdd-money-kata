@@ -10,9 +10,9 @@ namespace money_problem.Tests
         [Fact(DisplayName = "5 USD + 10 USD = 15 USD")]
         public void AddInUsd()
         {
-            double? result = MoneyCalculator.Add(5, USD, 10);
-            result.Should()
-                .NotBeNull();
+            MoneyCalculator.Add(5, USD, 10)
+                .Should()
+                .Be(15);
         }
         
         [Fact(DisplayName = "10 EUR x 2 = 20 EUR")]
