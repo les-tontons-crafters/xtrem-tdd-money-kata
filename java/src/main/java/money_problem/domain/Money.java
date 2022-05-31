@@ -1,11 +1,11 @@
 package money_problem.domain;
 
 public record Money(double amount, Currency currency) {
-    public double times(int times) {
-        return amount * times;
+    public Money times(int times) {
+        return new Money(amount * times, currency);
     }
 
-    public double divide(int divisor) {
-        return amount / divisor;
+    public Money divide(int divisor) {
+        return new Money(amount / divisor, currency);
     }
 }

@@ -26,19 +26,23 @@ public final class Bank {
     }
 
     public double convert(double amount, Currency from, Currency to) throws MissingExchangeRateException {
-        if (!canConvert(from, to)) {
-            throw new MissingExchangeRateException(from, to);
+        return convert(new Money(amount, from), to).amount();
+    }
+
+    public Money convert(Money money, Currency to) throws MissingExchangeRateException {
+        if (!canConvert(money, to)) {
+            throw new MissingExchangeRateException(money.currency(), to);
         }
-        return convertSafely(amount, from, to);
+        return convertSafely(money, to);
     }
 
-    private double convertSafely(double amount, Currency from, Currency to) {
-        return from == to
-                ? amount
-                : amount * exchangeRates.get(keyFor(from, to));
+    private boolean canConvert(Money money, Currency to) {
+        return money.currency() == to || exchangeRates.containsKey(keyFor(money.currency(), to));
     }
 
-    private boolean canConvert(Currency from, Currency to) {
-        return from == to || exchangeRates.containsKey(keyFor(from, to));
+    private Money convertSafely(Money money, Currency to) {
+        return money.currency() == to
+                ? money
+                : new Money(money.amount() * exchangeRates.get(keyFor(money.currency(), to)), to);
     }
 }

@@ -5,22 +5,18 @@ import java.util.ArrayList;
 public class Portfolio {
     private final ArrayList<Money> moneys = new ArrayList<>();
 
-    public void add(double amount, Currency currency) {
-        add(new Money(amount, currency));
-    }
-
     public void add(Money money) {
         moneys.add(money);
     }
 
-    public double evaluate(Bank bank, Currency toCurrency) throws MissingExchangeRatesException {
+    public Money evaluate(Bank bank, Currency toCurrency) throws MissingExchangeRatesException {
         var convertedResult = 0d;
         var missingExchangeRates = new ArrayList<MissingExchangeRateException>();
 
         for (Money money : moneys) {
             try {
-                var convertedAmount = bank.convert(money.amount(), money.currency(), toCurrency);
-                convertedResult += convertedAmount;
+                var convertedAmount = bank.convert(money, toCurrency);
+                convertedResult += convertedAmount.amount();
             } catch (MissingExchangeRateException missingExchangeRateException) {
                 missingExchangeRates.add(missingExchangeRateException);
             }
@@ -29,6 +25,6 @@ public class Portfolio {
         if (!missingExchangeRates.isEmpty()) {
             throw new MissingExchangeRatesException(missingExchangeRates);
         }
-        return convertedResult;
+        return new Money(convertedResult, toCurrency);
     }
 }
