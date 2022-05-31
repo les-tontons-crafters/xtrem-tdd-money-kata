@@ -25,10 +25,6 @@ public final class Bank {
         return from + "->" + to;
     }
 
-    public double convert(double amount, Currency from, Currency to) throws MissingExchangeRateException {
-        return convert(new Money(amount, from), to).amount();
-    }
-
     public Money convert(Money money, Currency to) throws MissingExchangeRateException {
         if (!canConvert(money, to)) {
             throw new MissingExchangeRateException(money.currency(), to);
