@@ -8,6 +8,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		docs\1-mutation-testing.md = docs\1-mutation-testing.md
 		docs\2-portfolio.md = docs\2-portfolio.md
+		docs\3.no-primitive-types.md = docs\3.no-primitive-types.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "img", "img", "{5A27C3EC-2B31-47AD-BA8C-41C56B4A111A}"
