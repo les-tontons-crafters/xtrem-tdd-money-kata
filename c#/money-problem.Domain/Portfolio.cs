@@ -14,8 +14,8 @@ public class Portfolio
         {
             try
             {
-                double convertedAmount = bank.Convert(money, currency);
-                convertedResult += convertedAmount;
+                Money convertedMoney = bank.Convert(money, currency);
+                convertedResult += convertedMoney.Amount;
             }
             catch (MissingExchangeRateException exception)
             {

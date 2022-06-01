@@ -13,14 +13,14 @@ namespace money_problem.Tests
         public void ConvertEuroToUsd() =>
             _bank.Convert(new Money(10, EUR), USD)
                 .Should()
-                .Be(12);
+                .Be(new Money(12, USD));
 
         [Fact(DisplayName = "10 EUR -> EUR = 10 EUR")]
         public void ConvertMoneyInSameCurrency()
         {
             _bank.Convert(new Money(10, EUR), EUR)
                 .Should()
-                .Be(10);
+                .Be(new Money(10, EUR));
         }
 
         [Fact(DisplayName = "Throws a MissingExchangeRateException in case of missing exchange rates")]
@@ -37,13 +37,13 @@ namespace money_problem.Tests
         {
             _bank.Convert(new Money(10, EUR), USD)
                 .Should()
-                .Be(12);
+                .Be(new Money(12, USD));
 
             _bank.AddExchangeRate(EUR, USD, 1.3);
             
             _bank.Convert(new Money(10, EUR), USD)
                 .Should()
-                .Be(13);
+                .Be(new Money(13, USD));
         }
     }
 }

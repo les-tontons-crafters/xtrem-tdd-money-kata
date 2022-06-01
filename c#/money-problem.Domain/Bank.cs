@@ -16,22 +16,22 @@ namespace money_problem.Domain
             return bank;
         }
 
-        public void AddExchangeRate(Currency from, Currency to, double rate) 
-            => _exchangeRates[KeyFor(from, to)] =  rate;
+        public void AddExchangeRate(Currency from, Currency to, double rate)
+            => _exchangeRates[KeyFor(from, to)] = rate;
 
         private static string KeyFor(Currency from, Currency to) => $"{from}->{to}";
 
-        public double Convert(Money money, Currency to) =>
+        public Money Convert(Money money, Currency to) =>
             CanConvert(money.Currency, to)
-                ? ConvertSafely(money.Amount, money.Currency, to)
+                ? ConvertSafely(money, to)
                 : throw new MissingExchangeRateException(money.Currency, to);
 
-        private double ConvertSafely(double amount, Currency from, Currency to) =>
-            to == from
-                ? amount
-                : amount * _exchangeRates[KeyFor(from, to)];
+        private Money ConvertSafely(Money money, Currency to) =>
+            to == money.Currency
+                ? money
+                : money with { Amount = money.Amount * _exchangeRates[KeyFor(money.Currency, to)], Currency = to};
 
         private bool CanConvert(Currency from, Currency to) =>
-            from == to || _exchangeRates.ContainsKey(KeyFor(from, to));
+                from == to || _exchangeRates.ContainsKey(KeyFor(from, to));
     }
 }
