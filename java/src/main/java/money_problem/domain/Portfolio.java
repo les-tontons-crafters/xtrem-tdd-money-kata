@@ -1,13 +1,25 @@
 package money_problem.domain;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public final class Portfolio {
-    private final ArrayList<Money> moneys = new ArrayList<>();
+    private final List<Money> moneys;
 
-    public void add(Money money) {
-        moneys.add(money);
+    public Portfolio() {
+        this.moneys = new ArrayList<>();
+    }
+
+    private Portfolio(List<Money> moneys) {
+        this.moneys = Collections.unmodifiableList(moneys);
+    }
+
+    public Portfolio add(Money money) {
+        var updatedMoneys = new ArrayList<>(moneys);
+        updatedMoneys.add(money);
+
+        return new Portfolio(updatedMoneys);
     }
 
     public Money evaluate(Bank bank, Currency toCurrency) throws MissingExchangeRatesException {

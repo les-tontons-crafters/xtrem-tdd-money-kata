@@ -13,9 +13,7 @@ public final class Bank {
 
     public static Bank withExchangeRate(Currency from, Currency to, double rate) {
         var bank = new Bank(new HashMap<>());
-        bank.addExchangeRate(from, to, rate);
-
-        return bank;
+        return bank.addExchangeRate(from, to, rate);
     }
 
     public Bank addExchangeRate(Currency from, Currency to, double rate) {
