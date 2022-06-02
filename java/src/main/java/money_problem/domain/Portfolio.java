@@ -3,7 +3,7 @@ package money_problem.domain;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Portfolio {
+public final class Portfolio {
     private final ArrayList<Money> moneys = new ArrayList<>();
 
     public void add(Money money) {

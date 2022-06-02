@@ -1,6 +1,6 @@
 package money_problem.domain;
 
-public record Money(double amount, Currency currency) {
+public final record Money(double amount, Currency currency) {
     public Money times(int times) {
         return new Money(amount * times, currency);
     }
