@@ -1,5 +1,6 @@
 package money_problem.domain;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -7,7 +8,7 @@ public final class Bank {
     private final Map<String, Double> exchangeRates;
 
     private Bank(Map<String, Double> exchangeRates) {
-        this.exchangeRates = exchangeRates;
+        this.exchangeRates = Collections.unmodifiableMap(exchangeRates);
     }
 
     public static Bank withExchangeRate(Currency from, Currency to, double rate) {
@@ -17,8 +18,11 @@ public final class Bank {
         return bank;
     }
 
-    public void addExchangeRate(Currency from, Currency to, double rate) {
-        exchangeRates.put(keyFor(from, to), rate);
+    public Bank addExchangeRate(Currency from, Currency to, double rate) {
+        var updateExchangeRates = new HashMap<>(exchangeRates);
+        updateExchangeRates.put(keyFor(from, to), rate);
+
+        return new Bank(updateExchangeRates);
     }
 
     private static String keyFor(Currency from, Currency to) {
