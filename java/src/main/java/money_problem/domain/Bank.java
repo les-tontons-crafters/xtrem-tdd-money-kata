@@ -4,6 +4,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static money_problem.domain.ConversionResult.fromFailure;
+import static money_problem.domain.ConversionResult.fromSuccess;
+
 public final class Bank {
     private final Map<String, Double> exchangeRates;
 
@@ -26,12 +29,11 @@ public final class Bank {
     private static String keyFor(Currency from, Currency to) {
         return from + "->" + to;
     }
-
-    public Money convert(Money money, Currency to) throws MissingExchangeRateException {
-        if (!canConvert(money, to)) {
-            throw new MissingExchangeRateException(money.currency(), to);
-        }
-        return convertSafely(money, to);
+    
+    public ConversionResult<String> convert(Money money, Currency to) {
+        return canConvert(money, to)
+                ? fromSuccess(convertSafely(money, to))
+                : fromFailure(String.format("%s->%s", money.currency(), to));
     }
 
     private boolean canConvert(Money money, Currency to) {
