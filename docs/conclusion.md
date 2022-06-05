@@ -12,5 +12,10 @@ The adaptive nature of EventStorming allows sophisticated cross-discipline conve
 
 More about it [here](https://www.eventstorming.com/)
 
-## Let's Event Storm
+![Post-its](img/post-it.png)
+
+## Lets Event Storm
 ![Feedback Event Storming](img/event-storming.png)
+
+## Contribution
+Please contact us through our [Xtrem repository](https://github.com/les-tontons-crafters/xtrem-tdd)
