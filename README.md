@@ -43,3 +43,5 @@ We have structured this workshop using the [4C model](https://www.bowperson.com/
 - [Concepts - 15'](docs/concepts.md)
 - [Concrete Practice - 85'](docs/concrete-practice.md)
 - [Conclusion - 10'](docs/conclusion.md)
+
+![Welcome](docs/img/welcome.png)
