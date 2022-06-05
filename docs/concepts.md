@@ -14,7 +14,7 @@ TDD is a technique borne of a set of beliefs about code :
     * Primary benefit : simplicity of design we get
 
 ## A bias toward simplicity
-* In software we can measure simplicity :
+* In software, we can measure simplicity :
     * Fewer lines of code per feature
     * Lower Cyclomatic Complexity
     * Fewer side effects
@@ -32,6 +32,8 @@ TDD increases our confidence in our code :
 
 * Each new test flexes the system in new and previously untested ways
 * Over time : the tests suite guards us against regression failures
+
+![Confidence](img/confidence.png)
 
 ## Building block of TDD
 A 3-phase process :
@@ -56,8 +58,9 @@ A 3-phase process :
 ![TDD cycle](img/tdd-rules.png)
 
 # Xtrem TDD
-Your craft mentor
-TODO : Present the concept / Pitch the website + the flavours
+Your craft mentor available online [here](https://xtrem-tdd.netlify.app/)
+
+![Confidence](img/xtrem.png)
 
 # A word on Pair Programming
 Change role at each new failing test.
