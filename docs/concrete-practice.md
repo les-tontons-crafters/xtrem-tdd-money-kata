@@ -74,11 +74,21 @@ We will work in small iterations (20')
 	- Our solution
 		- Keep your code or switch to our solution branch to move on
 
-List of constraints we will cover:
+### Workshop constraints
+In this workshop, we will cover:
 - Mutation Testing
 - Generate Code From Usage
 - No primitive types
 - No for loops
 - Only immutable types
 - No exception authorized
-	
+
+### Solution
+We have created 1 branch per constraint
+
+![Branches](img/branches.png)
+
+Each branch contains:
+- a possible `solution` for the given constraint in `java` and `c#`
+- a `step-by-step` guide to reproduce how we came from previous state to the state in the branch
+  - 1 guide per language in `<language>/docs/<#iteration>.<constraint>.md`
