@@ -39,9 +39,8 @@ namespace money_problem.Tests
                 .Should()
                 .Be(new Money(12, USD));
 
-            _bank.AddExchangeRate(EUR, USD, 1.3);
-            
-            _bank.Convert(new Money(10, EUR), USD)
+            _bank.AddExchangeRate(EUR, USD, 1.3)
+                .Convert(new Money(10, EUR), USD)
                 .Should()
                 .Be(new Money(13, USD));
         }

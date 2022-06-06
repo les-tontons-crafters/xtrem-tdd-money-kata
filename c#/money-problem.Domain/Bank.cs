@@ -1,23 +1,25 @@
 using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 
 namespace money_problem.Domain
 {
     public sealed class Bank
     {
-        private readonly Dictionary<string, double> _exchangeRates;
+        private readonly ReadOnlyDictionary<string, double> _exchangeRates;
 
-        private Bank(Dictionary<string, double> exchangeRates) => _exchangeRates = exchangeRates;
+        private Bank(IDictionary<string, double> exchangeRates) => _exchangeRates = new ReadOnlyDictionary<string, double>(exchangeRates);
 
-        public static Bank WithExchangeRate(Currency from, Currency to, double rate)
+        public static Bank WithExchangeRate(Currency from, Currency to, double rate) => 
+            new Bank(new Dictionary<string, double>()).AddExchangeRate(from, to, rate);
+
+        public Bank AddExchangeRate(Currency from, Currency to, double rate)
         {
-            var bank = new Bank(new Dictionary<string, double>());
-            bank.AddExchangeRate(from, to, rate);
-
-            return bank;
+            var updatedRates = new Dictionary<string, double>(this._exchangeRates);
+            var key = KeyFor(from, to);
+            updatedRates.TryAdd(key, default);
+            updatedRates[key] = rate;
+            return new Bank(updatedRates);
         }
-
-        public void AddExchangeRate(Currency from, Currency to, double rate)
-            => _exchangeRates[KeyFor(from, to)] = rate;
 
         private static string KeyFor(Currency from, Currency to) => $"{from}->{to}";
 
