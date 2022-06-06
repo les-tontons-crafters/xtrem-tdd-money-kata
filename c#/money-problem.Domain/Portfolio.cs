@@ -1,10 +1,20 @@
+using System.Collections.Immutable;
+
 namespace money_problem.Domain;
 
 public class Portfolio
 {
-    private readonly ICollection<Money> moneys = new List<Money>();
+    private readonly ICollection<Money> moneys;
 
-    public void Add(Money money) => this.moneys.Add(money);
+    public Portfolio()
+    {
+        this.moneys = new List<Money>();
+    }
+
+    private Portfolio(IEnumerable<Money> moneys)
+    {
+        this.moneys = moneys.ToImmutableList();
+    }
 
     public Money Evaluate(Bank bank, Currency currency)
     {
@@ -41,6 +51,13 @@ public class Portfolio
         {
             return new ConversionResult(exception);
         }
+    }
+
+    public Portfolio Add(Money money)
+    {
+        List<Money> updatedMoneys = this.moneys.ToList();
+        updatedMoneys.Add(money);
+        return new Portfolio(updatedMoneys);
     }
 
     private class ConversionResult
