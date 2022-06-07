@@ -5,3 +5,4 @@ This guide can be used to have main guidance per constraint / iteration when you
 - [2.Portfolio](2.portfolio.md)
 - [3.No Primitive Types](3.no-primitive-types.md)
 - [4.No For Loops](4.no-for-loops.md)
+- [5.Only Immutable Types](5.only-immutable-types.md)
