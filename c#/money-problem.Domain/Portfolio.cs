@@ -18,38 +18,41 @@ public class Portfolio
 
     public Money EvaluateWithException(Bank bank, Currency currency)
     {
-        List<ConversionResult> results = this.GetConvertedMoneys(bank, currency);
+        List<ConversionResult<MissingExchangeRateException>> results = this.GetConvertedMoneys(bank, currency);
         return ContainsFailure(results)
             ? throw ToException(results)
             : ToMoney(results, currency);
     }
 
-    private static MissingExchangeRatesException ToException(IEnumerable<ConversionResult> results) =>
+    private static MissingExchangeRatesException ToException(
+        IEnumerable<ConversionResult<MissingExchangeRateException>> results) =>
         new(results
-            .Where(result => result.HasException())
-            .Select(result => result.GetExceptionUnsafe())
+            .Where(result => result.IsFailure())
+            .Select(result => result.Failure!)
             .ToList());
 
-    private static Money ToMoney(IEnumerable<ConversionResult> results, Currency currency) =>
-        new(results.Sum(result => result.GetMoneyUnsafe().Amount), currency);
+    private static Money ToMoney(IEnumerable<ConversionResult<MissingExchangeRateException>> results,
+        Currency currency) =>
+        new(results.Sum(result => result.Money!.Amount), currency);
 
-    private static bool ContainsFailure(IEnumerable<ConversionResult> results) =>
-        results.Any(result => result.HasException());
+    private static bool ContainsFailure(IEnumerable<ConversionResult<MissingExchangeRateException>> results) =>
+        results.Any(result => result.IsFailure());
 
-    private List<ConversionResult> GetConvertedMoneys(Bank bank, Currency currency) =>
+    private List<ConversionResult<MissingExchangeRateException>> GetConvertedMoneys(Bank bank, Currency currency) =>
         this.moneys
             .Select(money => ConvertMoney(bank, currency, money))
             .ToList();
 
-    private static ConversionResult ConvertMoney(Bank bank, Currency currency, Money money)
+    private static ConversionResult<MissingExchangeRateException> ConvertMoney(Bank bank, Currency currency,
+        Money money)
     {
         try
         {
-            return new ConversionResult(bank.Convert(money, currency));
+            return new ConversionResult<MissingExchangeRateException>(bank.Convert(money, currency));
         }
         catch (MissingExchangeRateException exception)
         {
-            return new ConversionResult(exception);
+            return new ConversionResult<MissingExchangeRateException>(exception);
         }
     }
 
@@ -60,39 +63,41 @@ public class Portfolio
         return new Portfolio(updatedMoneys);
     }
 
-    public class ConversionResult
+    private static string GetMissingRates(IEnumerable<MissingExchangeRateException> missingRates) => missingRates
+        .Select(exception => $"[{exception.Message}]")
+        .Aggregate((r1, r2) => $"{r1},{r2}");
+    
+    public ConversionResult<string> Evaluate(Bank bank, Currency currency)
     {
-        private readonly MissingExchangeRateException? exception;
-
-        private readonly Money? money;
-
-        public ConversionResult(Money money)
+        List<ConversionResult<MissingExchangeRateException>> results = this.GetConvertedMoneys(bank, currency);
+        if (ContainsFailure(results))
         {
-            this.money = money;
+            return new ConversionResult<string>($"Missing exchange rate(s): {GetMissingRates(results.Where(result => result.IsFailure()).Select(result => result.Failure!))}");
         }
 
-        public ConversionResult(MissingExchangeRateException exception)
-        {
-            this.exception = exception;
-        }
-
-        public bool HasMoney() => this.money != null;
-
-        public bool HasException() => this.exception != null;
-
-        public MissingExchangeRateException GetExceptionUnsafe() => this.exception!;
-
-        public Money GetMoneyUnsafe() => this.money!;
+        return new ConversionResult<string>(new Money(results
+            .Where(result => result.IsSuccess())
+            .Sum(result => result.Money!.Amount), currency));
     }
 
-    public ConversionResult Evaluate(Bank bank, Currency currency)
+    public class ConversionResult<T>
     {
-        try {
-            return new ConversionResult(
-                this.EvaluateWithException(bank, currency)
-            );
-        } catch (MissingExchangeRatesException exception) {
-            return new ConversionResult(exception);
+        public ConversionResult(Money money)
+        {
+            this.Money = money;
         }
+
+        public ConversionResult(T failure)
+        {
+            this.Failure = failure;
+        }
+
+        public Money? Money { get; }
+
+        public T? Failure { get; }
+
+        public bool IsFailure() => this.Failure is { };
+
+        public bool IsSuccess() => this.Money is { };
     }
 }
