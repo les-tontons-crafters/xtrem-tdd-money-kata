@@ -80,7 +80,7 @@ In this workshop, we will cover:
 - [Generate Code From Usage](https://xtrem-tdd.netlify.app/Flavours/generate-code-from-usage)
 - No primitive types
 - No for loops
-- Only immutable types
+- [Only immutable types](https://xtrem-tdd.netlify.app/Flavours/immutable-types)
 - No exception authorized
 
 ### Solution
