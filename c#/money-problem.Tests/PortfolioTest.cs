@@ -22,21 +22,24 @@ public class PortfolioTest
     [Fact(DisplayName = "5 USD + 10 EUR = 17 USD")]
     public void Add_ShouldAddMoneyInDollarAndEuro() =>
         PortfolioWith(new Money(5, Currency.USD), new Money(10, Currency.EUR))
-            .EvaluateWithException(this.bank, Currency.USD)
+            .Evaluate(this.bank, Currency.USD)
+            .Money
             .Should()
             .Be(new Money(17, Currency.USD));
 
     [Fact(DisplayName = "1 USD + 1100 KRW = 2200 KRW")]
     public void Add_ShouldAddMoneyInDollarAndKoreanWons() =>
         PortfolioWith(new Money(1, Currency.USD), new Money(1100, Currency.KRW))
-            .EvaluateWithException(this.bank, Currency.KRW)
+            .Evaluate(this.bank, Currency.KRW)
+            .Money
             .Should()
             .Be(new Money(2200, Currency.KRW));
 
     [Fact(DisplayName = "5 USD + 10 EUR + 4 EUR = 21.8 USD")]
     public void Add_ShouldAddMoneyInDollarsAndMultipleAmountInEuros() =>
         PortfolioWith(new Money(5, Currency.USD), new Money(10, Currency.EUR), new Money(4, Currency.EUR))
-            .EvaluateWithException(bank, Currency.USD)
+            .Evaluate(bank, Currency.USD)
+            .Money
             .Should()
             .Be(new Money(21.8, Currency.USD));
 
@@ -54,7 +57,7 @@ public class PortfolioTest
     public void Add_ShouldAddMoneyInTheSameCurrency()
     {
         PortfolioWith(new Money(5, Currency.USD), new Money(10, Currency.USD))
-            .EvaluateWithException(bank, Currency.USD).Should().Be(new Money(15, Currency.USD));
+            .Evaluate(bank, Currency.USD).Money.Should().Be(new Money(15, Currency.USD));
     }
 
     private static Portfolio PortfolioWith(params Money[] moneys) =>
