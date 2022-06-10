@@ -22,12 +22,7 @@ namespace money_problem.Domain
         }
 
         private static string KeyFor(Currency from, Currency to) => $"{from}->{to}";
-
-        public Money Convert(Money money, Currency to) =>
-            CanConvert(money.Currency, to)
-                ? ConvertSafely(money, to)
-                : throw new MissingExchangeRateException(money.Currency, to);
-
+        
         private Money ConvertSafely(Money money, Currency to) =>
             to == money.Currency
                 ? money
@@ -35,5 +30,10 @@ namespace money_problem.Domain
 
         private bool CanConvert(Currency from, Currency to) =>
                 from == to || _exchangeRates.ContainsKey(KeyFor(from, to));
+
+        public ConversionResult<string> Convert(Money money, Currency to) =>
+            this.CanConvert(money.Currency, to)
+                ? ConversionResult<string>.FromMoney(ConvertSafely(money, to))
+                : ConversionResult<string>.FromFailure($"{money.Currency}->{to}");
     }
 }
