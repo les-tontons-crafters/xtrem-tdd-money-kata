@@ -20,7 +20,7 @@ namespace money_problem.Domain
             => _exchangeRates[KeyFor(from, to)] = rate;
 
         private static string KeyFor(Currency from, Currency to) => $"{from}->{to}";
-
+ 
         public Money Convert(Money money, Currency to) =>
             CanConvert(money.Currency, to)
                 ? ConvertSafely(money, to)
