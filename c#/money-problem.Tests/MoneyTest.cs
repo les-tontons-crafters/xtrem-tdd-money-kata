@@ -9,18 +9,18 @@ public class MoneyTest
     [Fact(DisplayName = "10 EUR x 2 = 20 EUR")]
     public void MultiplyInEuros()
     {
-        new Money(10, Currency.EUR)
+        10.Euros()
             .Times(2)
             .Should()
-            .Be(new Money(20, Currency.EUR));
+            .Be(20.Euros());
     }
 
     [Fact(DisplayName = "4002 KRW / 4 = 1000.5 KRW")]
     public void DivideInKoreanWons()
     {
-        new Money(4002, Currency.KRW)
+        4002.KoreanWons()
             .Divide(4)
             .Should()
-            .Be(new Money(1000.5, Currency.KRW));
+            .Be(1000.5.KoreanWons());
     }
 }
