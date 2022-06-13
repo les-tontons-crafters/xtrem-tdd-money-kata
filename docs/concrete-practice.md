@@ -76,7 +76,7 @@ We will work in small iterations (20')
 
 ### Workshop constraints
 In this workshop, we will cover:
-- Mutation Testing
+- [Mutation Testing](https://xtrem-tdd.netlify.app/Flavours/mutation-testing)
 - [Generate Code From Usage](https://xtrem-tdd.netlify.app/Flavours/generate-code-from-usage)
 - No primitive types
 - No for loops
