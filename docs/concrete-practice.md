@@ -75,12 +75,17 @@ We will work in small iterations (20')
 		- Keep your code or switch to our solution branch to move on
 
 ### Workshop constraints
-In this workshop, we will cover:
-- [Mutation Testing](https://xtrem-tdd.netlify.app/Flavours/mutation-testing)
-- [Generate Code From Usage](https://xtrem-tdd.netlify.app/Flavours/generate-code-from-usage)
-- No primitive types
+In this workshop, we will make those iterations:
+
+- Let's mutate the production code
+   - [Mutation Testing](https://xtrem-tdd.netlify.app/Flavours/mutation-testing)
+- Implement missing features using TDD
+   - [Generate Code From Usage](https://xtrem-tdd.netlify.app/Flavours/generate-code-from-usage)
+- Stop [Primitive obsession](https://refactoring.guru/fr/smells/primitive-obsession)
+   - No Primitive Types
 - No for loops
-- [Only immutable types](https://xtrem-tdd.netlify.app/Flavours/immutable-types)
+- No more state mutation
+   - [Only immutable types](https://xtrem-tdd.netlify.app/Flavours/immutable-types)
 - No exception authorized
 
 ### Solution
