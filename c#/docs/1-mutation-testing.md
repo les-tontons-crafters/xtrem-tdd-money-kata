@@ -38,16 +38,20 @@ When implemented, verify your test pass and run the stryker command again.
 
 ![Mutant](img/MutantMoneyCalculator.png)
 
-- Stryker was able to create a mutant as we don't have any assertion in our test.
+Stryker was able to create a mutant as we don't have any assertion in our test.
 
 ![Code Fix](img/MutantMoneyCalculatorCodeFix.png)
 
-- When implemented, verify your test pass and run the stryker command again.
+ When implemented, verify your test pass and run the stryker command again.
 
 ![Stryker Report Fixed](img/MutantMoneyCalculatorFixed.png)
 
-- Congratulations you have killed your first mutant !!!
+
+## Mutants eradicated!
+
+ Congratulations you have killed your first mutants !!!
+
 ![sentinel](img/sentinel-x-men.jpg)
 
-- Why you should focus on good assertion?
-	- Take a look at the [Test Desiderata](https://kentbeck.github.io/TestDesiderata/)
+Why you should focus on good assertion?
+- Take a look at the [Test Desiderata](https://kentbeck.github.io/TestDesiderata/)
