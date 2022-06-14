@@ -1,5 +1,7 @@
 # Mutation Testing
 
+## Instructions
+
 - Use dotnet command to install stryker
 `dotnet tool install -g dotnet-stryker`
 
@@ -21,13 +23,14 @@
 
 ![Mutant](img/MutantMissingExchangeRateException.png)
 
-- Stryker was able to create a mutant as we don't verify the exception message. 
-- Expecting an empty string makes our test pass too which proves our test isn't reliable.
-- Testing the message does provide value as it contain business information.
+Stryker was able to create a mutant as we don't verify the exception message. The processed replaced the exception message by an empty string and our test still passed.
+
+It proves our test isn't reliable.
+Testing the message does provide value as it contain business information.
 
 ![Code Fix](img/MutantMissingExchangeRateExceptionCodeFix.png)
 
-- When implemented, verify your test pass and run the stryker command again.
+When implemented, verify your test pass and run the stryker command again.
 
 ![Stryker Report Fixed](img/MutantMissingExchangeRateExceptionFixed.png)
 
