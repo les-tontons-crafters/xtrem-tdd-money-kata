@@ -78,6 +78,7 @@ We will work in small iterations (20')
 In this workshop, we will make those iterations:
 
 - Let's mutate the production code
+	- Run code coverage
    - [Mutation Testing](https://xtrem-tdd.netlify.app/Flavours/mutation-testing)
 - Implement missing features using TDD
    - [Generate Code From Usage](https://xtrem-tdd.netlify.app/Flavours/generate-code-from-usage)
