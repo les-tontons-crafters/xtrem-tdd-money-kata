@@ -65,9 +65,9 @@ We will work in small iterations (20')
 
 ![Xtrem iteration](img/xtrem-tdd.png)
 
-- Share the constraint - 1'
-- Implement it in your code - 14'
-- Debriefing - 5'
+- Share the constraint - **1'**
+- Implement it in your code - **14'**
+- Debriefing - **5'**
 	- How did you apply it?
 	- What did you learn?
 	- How could it be useful in your current code base?
