@@ -1,5 +1,5 @@
 # Implement Portfolio
-Implement the 2 new features :
+We have to implement two new features :
 
 ```text
 5 USD + 10 EUR = 17 USD
@@ -8,7 +8,7 @@ Implement the 2 new features :
 
 ## Write our first test
 
-```java
+```c#
 public class PortfolioTest
 {
     private readonly Bank bank = Bank.WithExchangeRate(Currency.EUR, Currency.USD, 1.2);
@@ -30,17 +30,18 @@ public class PortfolioTest
 }
 ```
 
-- From your IDE you should see your code like this
+From your IDE, you should see your code like this:
 
 ![Failing multi same currencies](img/PortfolioFirstFailingTest.png)
 
-- Congratulations you have a first failing test (You don't compile)
-- Now we have a failing test : `Make it pass as fast as possible`
-	- We start by using the power of our IDE and `generate code from usage`
+Congratulations you have a first failing test (compilation errors are failures).
+Now we have a failing test : `Make it pass as fast as possible`
+
+We can use the power of our IDE and `generate code from usage`:
 
 ![Generate code from usage](img/PortfolioGenerateCodeFromUsage.png)
 
-- Generated code :
+Here's what the generated code looks like:
 
 ```c#
 public class Portfolio
@@ -55,9 +56,11 @@ public class Portfolio
         throw new System.NotImplementedException();
     }
 }
-```	
+```
 
-- Then we can use the strategy for that is called `Fake It 'Til You Make It` (more about it [here](https://dzone.com/articles/three-modes-of-tdd))
+Then, we can apply the strategy `Fake It 'Til You Make It` (more about it [here](https://dzone.com/articles/three-modes-of-tdd))
+
+It's basically the fastest way to make the test pass. It is okay to write dirty code (hardcode, copy/paste, duplicate, etc.) to reach the green phase because `it will be refactored`. It's also a good way to verify you don't break any existing test.
 
 
 ```c#
@@ -67,7 +70,7 @@ public double evaluate(Bank bank, Currency currency) {
 }
 ```
 
-Where we are:
+Let's look at where we are at the moment:
 
 ```text
 ✅ 5 USD + 10 EUR = 17 USD
@@ -77,25 +80,25 @@ Improve error handling
 ```
 
 ## Handle currencies in KoreanWons
-- Let's write a new failing test
+Let's write a new failing test:
 
 ```c#
-@Test
-@DisplayName("1 USD + 1100 KRW = 2200 KRW")
-void shouldAddMoneyInDollarsAndKoreanWons() throws MissingExchangeRateException {
-    var portfolio = new Portfolio();
-    portfolio.add(1, USD);
-    portfolio.add(1100, KRW);
-
-    assertThat(portfolio.evaluate(bank, KRW))
-            .isEqualTo(2200);
+[Fact(DisplayName = "1 USD + 1100 KRW = 2200 KRW")]
+public void Add_ShouldAddMoneyInDollarAndKoreanWons()
+{
+	var portfolio = new Portfolio();
+	portfolio.Add(1, Currency.USD);
+	portfolio.Add(1100, Currency.KRW);
+	portfolio.Evaluate(bank, Currency.KRW).Should().Be(2200);
 }
 ```
 
-- The test is failing because we have faked the result of the `evaluated` method
-	- Here we use what we call `triangulation`
-		- We start by hardcoding the result
-		- We provide another test that leads us closer to the final solution
+The test is failing because we have faked the result of the `Evaluated` method
+ 
+Here, we use what we call `triangulation`:
+  - We start by hard-coding the result
+  - We provide another test to add more behaviors
+  - Each new test leads us closer to the final solution
 
 ```c#
 public class Portfolio
@@ -130,10 +133,10 @@ public class Portfolio
 }
 ```
 
-- Any refactoring ?
-	- In the tests, we could centralize the exchange rates setup
+Do you think any refactoring could be done ? 
+In the tests, we could centralize the exchange rates setup
 
-```java
+```c#
 private readonly Bank bank;
 
 public PortfolioTest()
@@ -143,11 +146,13 @@ public PortfolioTest()
 }
 ```
 
-- New stuff / refactoring ideas are emerging from the current implementation :
-	- If we have the same currency twice we have a problem in the `add` method
-		- We need to increase our confidence by adding a new test on it
-	- Missing Exchange rate -> how to improve error handling?
-- Let's add new test cases for our portfolio :
+Refactoring ideas are emerging from the current implementation :
+- If we have the same currency twice, we have a problem in the `Add` method
+  - We need to increase our confidence by adding a new test on it
+- Missing Exchange rate
+  - How to improve error handling?
+
+We're halfway there. Let's add new test cases for our portfolio :
 
 ```text
 ✅ 5 USD + 10 EUR = 17 USD
@@ -157,7 +162,8 @@ Improve error handling
 ```
 
 ## Portfolio containing amounts in same currencies
-- Let's write a red test
+
+As usual, the first step is always to write a failing test.
 
 ```c#
 [Fact(DisplayName = "5 USD + 10 EUR + 4 EUR = 21.8 USD")]
@@ -173,7 +179,7 @@ public void Add_ShouldAddMoneyInDollarsAndMultipleAmountInEuros()
 
 ![Failing multi same currencies](img/PortfolioFailingCurrencies.png)
 
-- Make it pass by refactoring the `add` method
+Make it pass by refactoring the `Add` method:
 
 ```c#
 public void Add(double amount, Currency currency)
@@ -187,6 +193,8 @@ public void Add(double amount, Currency currency)
 }
 ```
 
+One more step to go!
+
 ```text
 ✅ 5 USD + 10 EUR = 17 USD
 ✅ 1 USD + 1100 KRW = 2200 KRW
@@ -195,8 +203,9 @@ Improve error handling
 ```
 
 ## Improve error handling
-- Here we may improve error handling
-	- If we have multiple missing exchange rates we return the information only for the first missing one...
+Here, we need to improve error handling.
+
+If we have multiple missing exchange rates, we only return the information for the first missing one... You know the drill: let's write a new test!
 
 ```c#
 [Fact(DisplayName = "Throws a MissingExchangeRatesException in case of missing exchange rates")]
@@ -212,7 +221,7 @@ public void Add_ShouldThrowAMissingExchangeRatesException()
 }
 ```
 
-- Generate the Exception class from the test
+Generate the new Exception class from the test:
 
 ```c#
 public class MissingExchangeRatesException : Exception
@@ -225,7 +234,7 @@ public class MissingExchangeRatesException : Exception
 }
 ```
 
-- Adapt our evaluation to pass the test
+Adapt our evaluation to pass the test:
 
 ```c#
 public double Evaluate(Bank bank, Currency currency)
@@ -257,38 +266,36 @@ public double Evaluate(Bank bank, Currency currency)
 ```
 
 - Let's adapt our tests accordingly
-	- The `evaluate` method is now throwing only `MissingExchangeRatesException`
+	- The `Evaluate` method is now throwing only `MissingExchangeRatesException`
 
-```java
-@Test
-@DisplayName("5 USD + 10 EUR + 4 EUR = 21.8 USD")
-void shouldAddMoneyInDollarsAndMultipleAmountInEuros() throws MissingExchangeRatesException {
-    var portfolio = new Portfolio();
-    portfolio.add(5, USD);
-    portfolio.add(10, EUR);
-    portfolio.add(4, EUR);
-
-    assertThat(portfolio.evaluate(bank, USD))
-            .isEqualTo(21.8);
+```c#
+[Fact(DisplayName = "5 USD + 10 EUR + 4 EUR = 21.8 USD")]
+public void Add_ShouldAddMoneyInDollarsAndMultipleAmountInEuros()
+{
+	var portfolio = new Portfolio();
+	portfolio.Add(5, Currency.USD);
+	portfolio.Add(10, Currency.EUR);
+	portfolio.Add(4, Currency.EUR);
+	portfolio.Evaluate(bank, Currency.USD).Should().Be(21.8);
 }
 
-@Test
-@DisplayName("Throws a MissingExchangeRatesException in case of missing exchange rates")
-void shouldThrowAMissingExchangeRatesException() {
-    var portfolio = new Portfolio();
-    portfolio.add(1, EUR);
-    portfolio.add(1, USD);
-    portfolio.add(1, KRW);
-
-    assertThatThrownBy(() -> portfolio.evaluate(bank, EUR))
-            .isInstanceOf(MissingExchangeRatesException.class)
-            .hasMessage("Missing exchange rate(s): [USD->EUR],[KRW->EUR]");
+[Fact(DisplayName = "Throws a MissingExchangeRatesException in case of missing exchange rates")]
+public void Add_ShouldThrowAMissingExchangeRatesException()
+{
+	var portfolio = new Portfolio();
+	portfolio.Add(1, Currency.EUR);
+	portfolio.Add(1, Currency.USD);
+	portfolio.Add(1, Currency.KRW);
+	Action act = () => portfolio.Evaluate(this.bank, Currency.EUR);
+	act.Should().Throw<MissingExchangeRatesException>()
+		.WithMessage("Missing exchange rate(s): [USD->EUR],[KRW->EUR]");
 }
 ```
 
-- The tests are now all green
-- Let's refactor now
-	- We have some harcoded values in the new `MissingExchangeRatesException` class
+Congratulations! All tests are now green!
+
+But we don't stop when it works, we have to refactor now:
+- We have some hardcoded values in the new `MissingExchangeRatesException` class
 
 ```c#
 public class MissingExchangeRatesException : Exception
@@ -311,16 +318,17 @@ public class MissingExchangeRatesException : Exception
 ✅ Improve error handling
 ```
 
-- We have a code that grows in our `Portfolio`
-	- Let's keep it for the coming constraints 😊
+Our `Portfolio` is growing step-by-step.
+Let's keep it for the coming constraints 😊
 
 ## Reflect
 During this iteration we have implemented a `Portfolio` that allows to add different amounts in different currencies. Let's take a look at our test cases :
 
 ![Add is not necessary anymore](img/PortfolioMoveAddToPortfolio.png)
 
-- With our new features it would make sense to use only `Portfolio` to add moneys together
-- Let's move this test in our `PortfolioTest` suite
+With what we implemented during this iteration, it would make sense to use only the `Portfolio` to add moneys together.
+
+So let's move this test in our `PortfolioTest` suite
 
 ```c#
 [Fact(DisplayName = "5 USD + 10 USD = 15 USD")]
@@ -333,7 +341,6 @@ public void Add_ShouldAddMoneyInTheSameCurrency()
 }
 ```
 
-- Refactor :
-	- Remove the `add` method from our `MoneyCalculator`
+Now that we removed the test from MoneyCalculator, we can also remove the `Add` method as it's not being used anymore.
 
 `Always put the same attention on your test code than on your production code`
