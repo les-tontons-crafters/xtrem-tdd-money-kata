@@ -87,7 +87,7 @@ In this workshop, we will make those iterations:
 - No for loops
 - No more state mutation
    - [Only immutable types](https://xtrem-tdd.netlify.app/Flavours/immutable-types)
-- No exception authorized
+- [No exception authorized](https://xtrem-tdd.netlify.app/Flavours/avoid-exceptions)
 
 ### Solution
 We have created 1 branch per constraint
