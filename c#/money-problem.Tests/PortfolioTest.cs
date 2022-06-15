@@ -21,23 +21,23 @@ public class PortfolioTest
 
     [Fact(DisplayName = "5 USD + 10 EUR = 17 USD")]
     public void Add_ShouldAddMoneyInDollarAndEuro() =>
-        PortfolioWith(5.Dollars(), 10.Euros())
+        PortfolioWith(5d.Dollars(), 10d.Euros())
             .Evaluate(this.bank, Currency.USD)
             .Money
             .Should()
-            .Be(17.Dollars());
+            .Be(17d.Dollars());
 
     [Fact(DisplayName = "1 USD + 1100 KRW = 2200 KRW")]
     public void Add_ShouldAddMoneyInDollarAndKoreanWons() =>
-        PortfolioWith(1.Dollars(), 1100.KoreanWons())
+        PortfolioWith(1d.Dollars(), 1100d.KoreanWons())
             .Evaluate(this.bank, Currency.KRW)
             .Money
             .Should()
-            .Be(2200.KoreanWons());
+            .Be(2200d.KoreanWons());
 
     [Fact(DisplayName = "5 USD + 10 EUR + 4 EUR = 21.8 USD")]
     public void Add_ShouldAddMoneyInDollarsAndMultipleAmountInEuros() =>
-        PortfolioWith(5.Dollars(), 10.Euros(), 4.Euros())
+        PortfolioWith(5d.Dollars(), 10d.Euros(), 4d.Euros())
             .Evaluate(bank, Currency.USD)
             .Money
             .Should()
@@ -46,7 +46,7 @@ public class PortfolioTest
     [Fact(DisplayName = "Throws a MissingExchangeRatesException in case of missing exchange rates")]
     public void Add_ShouldThrowAMissingExchangeRatesException()
     {
-        PortfolioWith(1.Euros(), 1.Dollars(), 1.KoreanWons())
+        PortfolioWith(1d.Euros(), 1d.Dollars(), 1d.KoreanWons())
             .Evaluate(this.bank, Currency.EUR)
             .Failure
             .Should()
@@ -56,8 +56,8 @@ public class PortfolioTest
     [Fact(DisplayName = "5 USD + 10 USD = 15 USD")]
     public void Add_ShouldAddMoneyInTheSameCurrency()
     {
-        PortfolioWith(5.Dollars(), 10.Dollars())
-            .Evaluate(bank, Currency.USD).Money.Should().Be(15.Dollars());
+        PortfolioWith(5d.Dollars(), 10d.Dollars())
+            .Evaluate(bank, Currency.USD).Money.Should().Be(15d.Dollars());
     }
 
     private static Portfolio PortfolioWith(params Money[] moneys) =>
