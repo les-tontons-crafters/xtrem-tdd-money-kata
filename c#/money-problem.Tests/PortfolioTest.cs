@@ -22,32 +22,32 @@ public class PortfolioTest
     {
         // Arrange
         Portfolio portfolio = new Portfolio();
-        portfolio.Add(5.Dollars());
-        portfolio.Add(10.Euros());
+        portfolio.Add(5d.Dollars());
+        portfolio.Add(10d.Euros());
 
         // Act
         var evaluation = portfolio.Evaluate(bank, Currency.USD);
 
         // Assert
-        evaluation.Should().Be(17.Dollars());
+        evaluation.Should().Be(17d.Dollars());
     }
 
     [Fact(DisplayName = "1 USD + 1100 KRW = 2200 KRW")]
     public void Add_ShouldAddMoneyInDollarAndKoreanWons()
     {
         var portfolio = new Portfolio();
-        portfolio.Add(1.Dollars());
-        portfolio.Add(1100.KoreanWons());
-        portfolio.Evaluate(bank, Currency.KRW).Should().Be(2200.KoreanWons());
+        portfolio.Add(1d.Dollars());
+        portfolio.Add(1100d.KoreanWons());
+        portfolio.Evaluate(bank, Currency.KRW).Should().Be(2200d.KoreanWons());
     }
 
     [Fact(DisplayName = "5 USD + 10 EUR + 4 EUR = 21.8 USD")]
     public void Add_ShouldAddMoneyInDollarsAndMultipleAmountInEuros()
     {
         var portfolio = new Portfolio();
-        portfolio.Add(5.Dollars());
-        portfolio.Add(10.Euros());
-        portfolio.Add(4.Euros());
+        portfolio.Add(5d.Dollars());
+        portfolio.Add(10d.Euros());
+        portfolio.Add(4d.Euros());
         portfolio.Evaluate(bank, Currency.USD).Should().Be(21.8.Dollars());
     }
 
@@ -55,9 +55,9 @@ public class PortfolioTest
     public void Add_ShouldThrowAMissingExchangeRatesException()
     {
         var portfolio = new Portfolio();
-        portfolio.Add(1.Euros());
-        portfolio.Add(1.Dollars());
-        portfolio.Add(1.KoreanWons());
+        portfolio.Add(1d.Euros());
+        portfolio.Add(1d.Dollars());
+        portfolio.Add(1d.KoreanWons());
         Action act = () => portfolio.Evaluate(this.bank, Currency.EUR);
         act.Should().Throw<MissingExchangeRatesException>()
             .WithMessage("Missing exchange rate(s): [USD->EUR],[KRW->EUR]");
@@ -67,8 +67,8 @@ public class PortfolioTest
     public void Add_ShouldAddMoneyInTheSameCurrency()
     {
         var portfolio = new Portfolio();
-        portfolio.Add(5.Dollars());
-        portfolio.Add(10.Dollars());
-        portfolio.Evaluate(bank, Currency.USD).Should().Be(15.Dollars());
+        portfolio.Add(5d.Dollars());
+        portfolio.Add(10d.Dollars());
+        portfolio.Evaluate(bank, Currency.USD).Should().Be(15d.Dollars());
     }
 }
