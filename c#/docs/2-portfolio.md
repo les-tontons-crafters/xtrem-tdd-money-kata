@@ -99,7 +99,7 @@ public void Add_ShouldAddMoneyInDollarAndKoreanWons()
 }
 ```
 
-The test is failing because we have faked the result of the `Evaluated` method
+The test is failing because we have faked the result of the `Evaluate` method
 
 :green_circle: We have to make it pass.
  
@@ -158,8 +158,7 @@ public PortfolioTest()
 Refactoring ideas are emerging from the current implementation :
 - If we have the same currency twice, we have a problem in the `Add` method
   - We need to increase our confidence by adding a new test on it
-- Missing Exchange rate
-  - How to improve error handling?
+- Missing Exchange rate -> how to improve error handling?
 
 We're halfway there. Let's add new test cases for our portfolio :
 
@@ -358,5 +357,7 @@ public void Add_ShouldAddMoneyInTheSameCurrency()
 ```
 
 Now that we removed the test from MoneyCalculator, we can also remove the `Add` method as it's not being used anymore.
+
+![Generate code from usage](../../docs/img/generate-code.png)
 
 `Always put the same attention on your test code than on your production code`
