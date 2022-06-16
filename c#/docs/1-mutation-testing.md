@@ -51,7 +51,7 @@ Stryker was able to create a mutant as we don't have any assertion in our test.
 
  Congratulations you have killed your first mutants !!!
 
-![sentinel](img/sentinel-x-men.jpg)
+![Mutant killer](../../docs/img/mutant-killer.png)
 
 Why you should focus on good assertion?
 - Take a look at the [Test Desiderata](https://kentbeck.github.io/TestDesiderata/)
