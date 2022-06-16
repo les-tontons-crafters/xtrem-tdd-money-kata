@@ -40,7 +40,7 @@ From your IDE, you should see your code like this:
 Congratulations you have a first failing test (compilation errors are failures).
 Now we have a failing test : 
 
-:green_circle: `Make it pass as fast as possible`
+:green_circle: Make it pass `as fast as possible`
 
 We can use the power of our IDE and `generate code from usage`:
 
