@@ -8,10 +8,8 @@ We have to implement two new features :
 
 ## Write our first test
 
-(:red_circle:)
-<span style="color:#990000">
+:red_circle: 
 Let's write a failing test.
-</span>
 
 ```c#
 public class PortfolioTest
@@ -40,7 +38,9 @@ From your IDE, you should see your code like this:
 ![Failing multi same currencies](img/PortfolioFirstFailingTest.png)
 
 Congratulations you have a first failing test (compilation errors are failures).
-Now we have a failing test : `Make it pass as fast as possible`
+Now we have a failing test : 
+
+:green_circle: `Make it pass as fast as possible`
 
 We can use the power of our IDE and `generate code from usage`:
 
@@ -75,10 +75,6 @@ public double evaluate(Bank bank, Currency currency) {
 }
 ```
 
-<span style="color:#006600">
-Our test is now passing.
-</span>
-
 Let's look at where we are at the moment:
 
 ```text
@@ -89,9 +85,8 @@ Improve error handling
 ```
 
 ## Handle currencies in KoreanWons
-<span style="color:#990000">
+:red_circle:
 Let's write a new failing test:
-</span>
 
 ```c#
 [Fact(DisplayName = "1 USD + 1100 KRW = 2200 KRW")]
@@ -106,9 +101,7 @@ public void Add_ShouldAddMoneyInDollarAndKoreanWons()
 
 The test is failing because we have faked the result of the `Evaluated` method
 
-<span style="color:#006600">
-We have to make it pass.
-</span>
+:green_circle: We have to make it pass.
  
 Here, we use what we call `triangulation`:
   - We start by hard-coding the result
@@ -148,9 +141,7 @@ public class Portfolio
 }
 ```
 
-<span style="color:#3366cc">
-Do you think any refactoring could be done ?
-</span>
+:large_blue_circle: Do you think any refactoring could be done ?
 
 In the tests, we could centralize the exchange rates setup
 
@@ -180,9 +171,8 @@ Improve error handling
 ```
 
 ## Portfolio containing amounts in same currencies
-<span style="color:#990000">
+:red_circle:
 As usual, the first step is always to write a failing test.
-</span>
 
 ```c#
 [Fact(DisplayName = "5 USD + 10 EUR + 4 EUR = 21.8 USD")]
@@ -198,9 +188,8 @@ public void Add_ShouldAddMoneyInDollarsAndMultipleAmountInEuros()
 
 ![Failing multi same currencies](img/PortfolioFailingCurrencies.png)
 
-<span style="color:#006600">
+:green_circle:
 Make it pass by refactoring the `Add` method:
-</span>
 
 ```c#
 public void Add(double amount, Currency currency)
@@ -228,9 +217,8 @@ Here, we need to improve error handling.
 
 If we have multiple missing exchange rates, we only return the information for the first missing one... 
 
-<span style="color:#990000">
+:red_circle:
 You know the drill: let's write a new test!
-</span> 
 
 ```c#
 [Fact(DisplayName = "Throws a MissingExchangeRatesException in case of missing exchange rates")]
@@ -259,9 +247,8 @@ public class MissingExchangeRatesException : Exception
 }
 ```
 
-<span style="color:#006600">
+:green_circle:
 Adapt our evaluation to pass the test:
-</span>
 
 ```c#
 public double Evaluate(Bank bank, Currency currency)
@@ -321,9 +308,8 @@ public void Add_ShouldThrowAMissingExchangeRatesException()
 
 Congratulations! All tests are now green!
 
-<span style="color:#3366cc">
+:large_blue_circle:
 But we don't stop when it works, we have to refactor now:
-</span> 
 
 - We have some hardcoded values in the new `MissingExchangeRatesException` class
 
