@@ -65,9 +65,9 @@ We will work in small iterations (20')
 
 ![Xtrem iteration](img/xtrem-tdd.png)
 
-- Share the constraint - 1'
-- Implement it in your code - 14'
-- Debriefing - 5'
+- Share the constraint - **1'**
+- Implement it in your code - **14'**
+- Debriefing - **5'**
 	- How did you apply it?
 	- What did you learn?
 	- How could it be useful in your current code base?
@@ -75,13 +75,19 @@ We will work in small iterations (20')
 		- Keep your code or switch to our solution branch to move on
 
 ### Workshop constraints
-In this workshop, we will cover:
-- Mutation Testing
-- Generate Code From Usage
-- No primitive types
+In this workshop, we will make those iterations:
+
+- Let's mutate the production code
+	- Run code coverage
+   - [Mutation Testing](https://xtrem-tdd.netlify.app/Flavours/mutation-testing)
+- Implement missing features using TDD
+   - [Generate Code From Usage](https://xtrem-tdd.netlify.app/Flavours/generate-code-from-usage)
+- Stop [Primitive obsession](https://refactoring.guru/fr/smells/primitive-obsession)
+   - No Primitive Types
 - No for loops
-- Only immutable types
-- No exception authorized
+- No more state mutation
+   - [Only immutable types](https://xtrem-tdd.netlify.app/Flavours/immutable-types)
+- [No exception authorized](https://xtrem-tdd.netlify.app/Flavours/avoid-exceptions)
 
 ### Solution
 We have created 1 branch per constraint
