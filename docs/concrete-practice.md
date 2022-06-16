@@ -83,8 +83,8 @@ In this workshop, we will make those iterations:
 - Implement missing features using TDD
    - [Generate Code From Usage](https://xtrem-tdd.netlify.app/Flavours/generate-code-from-usage)
 - Stop [Primitive obsession](https://refactoring.guru/fr/smells/primitive-obsession)
-   - No Primitive Types
-- No for loops
+   - [No Primitive Types](https://xtrem-tdd.netlify.app/Flavours/no-primitive-types)
+- [No for loops](https://xtrem-tdd.netlify.app/Flavours/no-for-loops)
 - No more state mutation
    - [Only immutable types](https://xtrem-tdd.netlify.app/Flavours/immutable-types)
 - [No exception authorized](https://xtrem-tdd.netlify.app/Flavours/avoid-exceptions)
