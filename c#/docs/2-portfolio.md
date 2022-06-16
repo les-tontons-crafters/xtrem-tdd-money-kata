@@ -8,6 +8,7 @@ We have to implement two new features :
 
 ## Write our first test
 
+(:red_circle:)
 <span style="color:#990000">
 Let's write a failing test.
 </span>
