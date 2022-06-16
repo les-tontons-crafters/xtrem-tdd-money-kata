@@ -24,6 +24,8 @@ Here are some example of constraints that we have documented on our website :
 By overcoming those constraints you will learn new ways of designing your code that you will be able to use in your day-to-day.
 ```
 
+![Welcome](docs/img/xtrem-tdd-logo.png)
+
 #### Prerequisites
 You need to install the runtime environment for the language you prefer use:
 
@@ -43,5 +45,3 @@ We have structured this workshop using the [4C model](https://www.bowperson.com/
 - [Concepts - 15'](docs/concepts.md)
 - [Concrete Practice - 85'](docs/concrete-practice.md)
 - [Conclusion - 10'](docs/conclusion.md)
-
-![Welcome](docs/img/welcome.png)
