@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
+using FluentAssertions.Extensions;
 using money_problem.Domain;
 using Xunit;
 using Xunit.Sdk;
