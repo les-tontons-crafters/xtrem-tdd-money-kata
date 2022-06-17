@@ -5,14 +5,16 @@ TDD is a technique born of a set of beliefs about code :
 * Obviousness and clarity are more virtuous than cleverness
 * Writing uncluttered code is a key component of being successful
 
+It's a methodology from Extreme Programming (XP) which was developed by Kent Beck while working on the C3 project.
+
 `Test-Driven Development is a way of managing fear during programming - Kent Beck`
 
 ## Designing and structuring code
 * TDD is not fundamentally about testing code
 * Its purpose : `improve the design and structure of the code`
-    * Unit Tests we end up with are an added bonus
-    * Primary benefit : simplicity of design we get
+    * Primary benefit : simplicity of design
     * Provides us the ability to **safely** refactor
+    * Unit Tests we end up with are an added bonus, acting as a safety net for the team
 
 ## A bias toward simplicity
 * In software, we can measure simplicity :
@@ -33,6 +35,7 @@ TDD increases our confidence in our code :
 
 * Each new test flexes the system in new and previously untested ways
 * Over time : the tests suite guards us against regression failures
+* Fast feedback loop : we constantly have a fast feedback on the system's state
 
 ![Confidence](img/confidence.png)
 
@@ -54,6 +57,7 @@ A 3-phase process :
     * If we break any test during this phase :
         * Prioritize getting back to green before exiting this phase
         * The longer it takes to come back to a safe state, the harder it is
+        * Avoid sunk cost fallacy
 
 [![TDD steps](img/tdd.png)](https://tddmanifesto.com/getting-started/)
 
