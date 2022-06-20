@@ -10,38 +10,51 @@ It's a methodology from Extreme Programming (XP) which was developed by Kent Bec
 `Test-Driven Development is a way of managing fear during programming - Kent Beck`
 
 ## Designing and structuring code
-* TDD is not fundamentally about testing code
-* Its purpose : `improve the design and structure of the code`
-    * Primary benefit : simplicity of design
-    * Provides us the ability to **safely** refactor
-    * Unit Tests we end up with are an added bonus, acting as a safety net for the team
+Test-Driven Development is **not** about testing code.
+Tests are a mean to an end, our **safety net**, not the objective.
+
+It is about
+* Improving the design / structure of the code
+* Allowing us to **safely** refactor thanks to our tests
 
 ## A bias toward simplicity
-* In software, we can measure simplicity :
-    * Fewer lines of code per feature
-    * Lower Cyclomatic Complexity
-    * Fewer side effects
-    * Smaller runtime / memory requirements
-* TDD forces us to craft the simplest thing that works
-* Virtue isn't mystical :
-    * Using TDD won't cut by half :
-        * your development time
-        * the lines of code
-        * defect count
-    * It will allow you to arrest the temptation to introduce artificial / contrived complexity
+There are multiple ways to measure simplicity in Software :
+* Fewer lines of code per feature
+* Lower Cyclomatic Complexity
+* Fewer side effects
+* Smaller runtime / memory requirements
+
+TDD forces us to craft the simplest thing that works
+* Don't write more code than necessary (**YAGNI**)
+* Stop the temptation to introduce artificial complexity
+
+Still, TDD isn't a magic wand. It won't:
+* your development time
+* the lines of code
+* defect count
 
 ## Increased Confidence
 TDD increases our confidence in our code :
 
-* Each new test flexes the system in new and previously untested ways
-* Over time : the tests suite guards us against regression failures
-* Fast feedback loop : we constantly have a fast feedback on the system's state
+* Each new test flexes the system in new, and previously untested, ways
+* Over time, the tests suite guards us against regression failures
+* We constantly have a fast feedback on the system's state (fast feedback-loop)
 
 ![Confidence](img/confidence.png)
 
 ## Building block of TDD
-A 3-phase process :
 
+* TDD is a scientific approach to Software Development
+    * Write an hypothesis
+    * Run the experiment
+    * Observe the outcome
+    * Try something new
+    * Run the experiment
+    * Observe the outcome
+    * Try something new  
+    * etc...
+
+A 3-phase process :
 * :red_circle: ***Red*** : We write a failing test
     * Including possible compilation failures
     * We run the test suite to verify the failing test
@@ -60,12 +73,6 @@ A 3-phase process :
         * Avoid sunk cost fallacy
 
 [![TDD steps](img/tdd.png)](https://tddmanifesto.com/getting-started/)
-
-* TDD is a scientific approach to Software Development
-    * Write an hypothesis
-    * Run the experiment
-    * Observe the outcome
-    * Try an idea
 
 ## 3 Rules from Uncle Bob
 1. Write production code only to pass a failing unit test.
