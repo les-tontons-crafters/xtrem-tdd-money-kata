@@ -28,7 +28,7 @@ TDD forces us to craft the simplest thing that works
 * Don't write more code than necessary (**YAGNI**)
 * Stop the temptation to introduce artificial complexity
 
-Still, TDD isn't a magic wand. It won't:
+Still, TDD isn't a magic wand. It won't reduce:
 * your development time
 * the lines of code
 * defect count
