@@ -49,10 +49,21 @@ Bank implementation :
 ✅ Allow exchange rates to be modified
 ```
 
-A few of them are not developed yet, it will be your mission during this kata :
-
+From now on, we would like to handle operations between amounts in different currencies:
 - [ ] 5 USD + 10 EUR = 17 USD
 - [ ] 1 USD + 1100 KRW = 2200 KRW
+
+We need to bring a new business concept to out implementation: a `Portfolio`.
+
+Basically, a `Portfolio` contains a **list of amounts in various currencies**. Taking our first example above, it could contain `5 USD` and `10 EUR`.
+
+We should be able to **evaluate** the full `Portfolio` amount in a **given currency**:
+- `USD` => `17 USD`
+- `EUR` => `14,1 EUR`
+- `KRW` => `18940 KRW`
+- etc.
+
+Your mission for this kata will be to implement the `Portfolio`.
 
 ## Constraints
 You will have to develop using the main constraints:
@@ -66,7 +77,7 @@ We will work in small iterations (20')
 ![Xtrem iteration](img/xtrem-tdd.png)
 
 - Share the constraint - **1'**
-- Implement it in your code - **14'**
+- Implement it in your code - **24'**
 - Debriefing - **5'**
 	- How did you apply it?
 	- What did you learn?
