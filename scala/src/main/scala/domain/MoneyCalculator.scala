@@ -3,9 +3,6 @@ package domain
 import domain.Currency.Currency
 
 object MoneyCalculator {
-  def add(amount: Double, currency: Currency, addedAmount: Double): Double =
-    amount + addedAmount
-
   def times(amount: Double, currency: Currency, times: Int): Double =
     amount * times
 
