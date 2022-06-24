@@ -17,7 +17,9 @@ class BankShould extends AnyFunSuite {
   test(
     "Throws a MissingExchangeRateException in case of missing exchange rates"
   ) {
-    assertThrows[MissingExchangeRateException](bank.convert(10, EUR, KRW))
+    val exception =
+      intercept[MissingExchangeRateException](bank.convert(10, EUR, KRW))
+    assert(exception.getMessage == "EUR->KRW")
   }
 
   test("Conversion with different exchange rates EUR -> USD") {
