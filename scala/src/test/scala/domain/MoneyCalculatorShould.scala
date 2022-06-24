@@ -4,13 +4,6 @@ import domain.Currency._
 import org.scalatest.funsuite.AnyFunSuite
 
 class MoneyCalculatorShould extends AnyFunSuite {
-  test("5 USD + 10 USD = 15 USD") {
-    assert(
-      MoneyCalculator
-        .add(5, USD, 10) === 15
-    )
-  }
-
   test("10 EUR x 2 = 20 EUR") {
     assert(
       MoneyCalculator
