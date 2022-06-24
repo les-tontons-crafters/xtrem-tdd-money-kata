@@ -8,23 +8,54 @@ class Portfolio() {
   def add(money: Money): Unit =
     moneys = moneys :+ money
 
-  def evaluate(bank: Bank, toCurrency: Currency): Money = {
-    var convertedResult = 0d
-    var missingExchangeRates: Seq[MissingExchangeRateException] = Seq.empty
-
-    for (money <- moneys) {
-      try {
-        val convertedAmount = bank.convert(money, toCurrency)
-        convertedResult += convertedAmount.amount
-      } catch {
-        case missingExchangeRate: MissingExchangeRateException =>
-          missingExchangeRates = missingExchangeRates :+ missingExchangeRate
-      }
+  private def convertMoney(
+      bank: Bank,
+      money: Money,
+      toCurrency: Currency
+  ): ConversionResult = {
+    try {
+      new ConversionResult(bank.convert(money, toCurrency))
+    } catch {
+      case missingExchangeRate: MissingExchangeRateException =>
+        new ConversionResult(missingExchangeRate)
     }
-
-    if (missingExchangeRates.nonEmpty)
-      throw MissingExchangeRatesException(missingExchangeRates.toSeq)
-
-    Money(convertedResult, toCurrency)
   }
+
+  def evaluate(bank: Bank, toCurrency: Currency): Money = {
+    val convertedMoneys = convertMoneys(bank, toCurrency)
+
+    if (containsFailure(convertedMoneys))
+      throw toMissingExchangeRatesException(convertedMoneys)
+    else toMoney(toCurrency, convertedMoneys)
+  }
+
+  private def convertMoneys(
+      bank: Bank,
+      toCurrency: Currency
+  ): Seq[ConversionResult] =
+    moneys.map(money => convertMoney(bank, money, toCurrency))
+
+  private def containsFailure(convertedMoneys: Seq[ConversionResult]): Boolean =
+    convertedMoneys.exists(_.isFailure)
+
+  private def toMissingExchangeRatesException(
+      convertedMoneys: Seq[ConversionResult]
+  ) =
+    MissingExchangeRatesException(
+      convertedMoneys
+        .filter(_.isFailure)
+        .flatMap(_.missingExchangeRate)
+    )
+
+  private def toMoney(
+      toCurrency: Currency,
+      convertedMoneys: Seq[ConversionResult]
+  ): Money =
+    Money(
+      convertedMoneys
+        .filter(_.isSuccess)
+        .flatMap(_.money)
+        .foldLeft(0d)((acc, money) => acc + money.amount),
+      toCurrency
+    )
 }
