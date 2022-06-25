@@ -2,15 +2,13 @@ package domain
 
 import domain.Currency.Currency
 
-import scala.collection.mutable
-
 sealed case class Bank private (
-    private val exchangeRates: mutable.Map[String, Double] = mutable.Map()
+    private val exchangeRates: Map[String, Double] = Map.empty
 ) {
   private def keyFor(from: Currency, to: Currency): String = s"$from->$to"
 
-  def addExchangeRate(from: Currency, to: Currency, rate: Double): Unit =
-    exchangeRates(keyFor(from, to)) = rate
+  def addExchangeRate(from: Currency, to: Currency, rate: Double): Bank =
+    Bank(exchangeRates.updated(keyFor(from, to), rate))
 
   def convert(money: Money, toCurrency: Currency): Money = {
     if (!canConvert(money, toCurrency)) {
@@ -34,9 +32,6 @@ sealed case class Bank private (
 }
 
 object Bank {
-  def withExchangeRate(from: Currency, to: Currency, rate: Double): Bank = {
-    val bank = Bank()
-    bank.addExchangeRate(from, to, rate)
-    bank
-  }
+  def withExchangeRate(from: Currency, to: Currency, rate: Double): Bank =
+    Bank().addExchangeRate(from, to, rate)
 }

@@ -2,11 +2,9 @@ package domain
 
 import domain.Currency.Currency
 
-class Portfolio() {
-  private var moneys: List[Money] = List.empty
-
-  def add(money: Money): Unit =
-    moneys = moneys :+ money
+class Portfolio(private val moneys: Money*) {
+  def add(money: Money): Portfolio =
+    new Portfolio(moneys :+ money: _*)
 
   private def convertMoney(
       bank: Bank,

@@ -25,8 +25,11 @@ class BankShould extends AnyFunSuite {
 
   test("Conversion with different exchange rates EUR -> USD") {
     assert(bank.convert(10.euros(), USD) === 12.dollars())
-    bank.addExchangeRate(EUR, USD, 1.3)
 
-    assert(bank.convert(10.euros(), USD) === 13.dollars())
+    assert(
+      bank
+        .addExchangeRate(EUR, USD, 1.3)
+        .convert(10.euros(), USD) === 13.dollars()
+    )
   }
 }
