@@ -43,7 +43,6 @@ class Portfolio() {
   ) =
     MissingExchangeRatesException(
       convertedMoneys
-        .filter(_.isFailure)
         .flatMap(_.missingExchangeRate)
     )
 
@@ -53,7 +52,6 @@ class Portfolio() {
   ): Money =
     Money(
       convertedMoneys
-        .filter(_.isSuccess)
         .flatMap(_.money)
         .foldLeft(0d)((acc, money) => acc + money.amount),
       toCurrency

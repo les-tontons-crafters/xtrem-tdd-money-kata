@@ -10,5 +10,4 @@ sealed case class ConversionResult private (
     this(None, Some(missingExchangeRate))
 
   def isFailure: Boolean = missingExchangeRate.isDefined
-  def isSuccess: Boolean = money.isDefined
 }
