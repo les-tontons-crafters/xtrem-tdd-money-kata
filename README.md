@@ -31,6 +31,7 @@ You need to install the runtime environment for the language you prefer use:
 
 - C# : [.NET 6](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
 - java : [SDK 17](https://www.oracle.com/java/technologies/downloads/)
+- Scala 2 : `scala 2.13.8`
 
 #### Workshop structure
 We have structured this workshop using the [4C model](https://www.bowperson.com/2017/11/reposting-a-quick-guide-to-the-4cs-map/) :
