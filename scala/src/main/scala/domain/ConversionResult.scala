@@ -1,13 +1,22 @@
 package domain
 
-sealed case class ConversionResult private (
+sealed case class ConversionResult[Failure] private (
     money: Option[Money],
-    missingExchangeRate: Option[MissingExchangeRateException]
+    failure: Option[Failure]
 ) {
+
   def this(money: Money) = this(Some(money), None)
 
-  def this(missingExchangeRate: MissingExchangeRateException) =
-    this(None, Some(missingExchangeRate))
+  def this(failure: Failure) =
+    this(None, Some(failure))
 
-  def isFailure: Boolean = missingExchangeRate.isDefined
+  def isFailure: Boolean = failure.isDefined
+}
+
+object ConversionResult {
+  def fromSuccess[Failure](money: Money): ConversionResult[Failure] =
+    new ConversionResult[Failure](money)
+
+  def fromFailure[Failure](failure: Failure): ConversionResult[Failure] =
+    new ConversionResult[Failure](failure)
 }

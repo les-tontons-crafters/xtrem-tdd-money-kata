@@ -1,5 +1,6 @@
 package domain
 
+import domain.ConversionResult.{fromFailure, fromSuccess}
 import domain.Currency.Currency
 
 sealed case class Bank private (
@@ -10,11 +11,10 @@ sealed case class Bank private (
   def addExchangeRate(from: Currency, to: Currency, rate: Double): Bank =
     Bank(exchangeRates.updated(keyFor(from, to), rate))
 
-  def convert(money: Money, toCurrency: Currency): Money = {
-    if (!canConvert(money, toCurrency)) {
-      throw MissingExchangeRateException(money.currency, toCurrency)
-    }
-    convertSafely(money, toCurrency)
+  def convert(money: Money, toCurrency: Currency): ConversionResult[String] = {
+    if (canConvert(money, toCurrency))
+      fromSuccess(convertSafely(money, toCurrency))
+    else fromFailure(s"${money.currency}->$toCurrency")
   }
 
   private def canConvert(money: Money, toCurrency: Currency): Boolean =

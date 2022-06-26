@@ -2,10 +2,13 @@ package domain
 
 import domain.Currency._
 import domain.DomainExtensions.MoneyExtensions
-import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.{BeforeAndAfterEach, OptionValues}
 
-class PortfolioShould extends AnyFunSuite with BeforeAndAfterEach {
+class PortfolioShould
+    extends AnyFunSuite
+    with BeforeAndAfterEach
+    with OptionValues {
   private var bank: Bank = _
 
   override def beforeEach(): Unit = {
@@ -19,7 +22,7 @@ class PortfolioShould extends AnyFunSuite with BeforeAndAfterEach {
       portfolioWith(
         5.dollars(),
         10.dollars()
-      ).evaluate(bank, USD) == 15.dollars()
+      ).evaluate(bank, USD).money.value == 15.dollars()
     )
   }
 
@@ -28,7 +31,7 @@ class PortfolioShould extends AnyFunSuite with BeforeAndAfterEach {
       portfolioWith(
         5.dollars(),
         10.euros()
-      ).evaluate(bank, USD) == 17.dollars()
+      ).evaluate(bank, USD).money.value == 17.dollars()
     )
   }
 
@@ -37,7 +40,7 @@ class PortfolioShould extends AnyFunSuite with BeforeAndAfterEach {
       portfolioWith(
         1.dollars(),
         1100.koreanWons()
-      ).evaluate(bank, KRW) == 2200.koreanWons()
+      ).evaluate(bank, KRW).money.value == 2200.koreanWons()
     )
   }
 
@@ -47,23 +50,21 @@ class PortfolioShould extends AnyFunSuite with BeforeAndAfterEach {
         5.dollars(),
         10.euros(),
         4.euros()
-      ).evaluate(bank, USD) == 21.8.dollars()
+      ).evaluate(bank, USD).money.value == 21.8.dollars()
     )
   }
 
   test(
-    "Throws a MissingExchangeRatesException in case of missing exchange rates"
+    "Return a failure in case of missing exchange rates"
   ) {
-    val exception =
-      intercept[MissingExchangeRatesException](
-        portfolioWith(
-          1.euros(),
-          1.dollars(),
-          1.koreanWons()
-        ).evaluate(bank, EUR) == 21.8.dollars()
-      )
     assert(
-      exception.getMessage == "Missing exchange rate(s): [USD->EUR],[KRW->EUR]"
+      portfolioWith(
+        1.euros(),
+        1.dollars(),
+        1.koreanWons()
+      ).evaluate(bank, EUR)
+        .failure
+        .value == "Missing exchange rate(s): [USD->EUR],[KRW->EUR]"
     )
   }
 
