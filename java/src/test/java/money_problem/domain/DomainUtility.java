@@ -1,6 +1,6 @@
 package money_problem.domain;
 
-import java.util.Arrays;
+import io.vavr.collection.Vector;
 
 public class DomainUtility {
     public static Money dollars(double amount) {
@@ -16,7 +16,7 @@ public class DomainUtility {
     }
 
     public static Portfolio portfolioWith(Money... moneys) {
-        return Arrays.stream(moneys)
-                .reduce(new Portfolio(), Portfolio::add, (previousPortfolio, newPortfolio) -> newPortfolio);
+        return Vector.of(moneys)
+                .foldLeft(new Portfolio(), Portfolio::add);
     }
 }
