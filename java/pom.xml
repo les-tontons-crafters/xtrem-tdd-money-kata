@@ -18,6 +18,7 @@
         <pitest.junit5.version>0.15</pitest.junit5.version>
         <vavr.version>0.10.4</vavr.version>
         <assertj-vavr.version>0.4.2</assertj-vavr.version>
+        <junit-quickcheck.version>1.0</junit-quickcheck.version>
     </properties>
 
     <build>
@@ -68,6 +69,18 @@
             <groupId>org.assertj</groupId>
             <artifactId>assertj-vavr</artifactId>
             <version>${assertj-vavr.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.pholser</groupId>
+            <artifactId>junit-quickcheck-core</artifactId>
+            <version>${junit-quickcheck.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.pholser</groupId>
+            <artifactId>junit-quickcheck-generators</artifactId>
+            <version>${junit-quickcheck.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
