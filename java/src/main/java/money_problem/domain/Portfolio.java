@@ -1,31 +1,25 @@
 package money_problem.domain;
 
+import io.vavr.collection.Seq;
+import io.vavr.collection.Vector;
 import io.vavr.control.Either;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import static io.vavr.control.Either.left;
 import static io.vavr.control.Either.right;
 
 public final class Portfolio {
-    private final List<Money> moneys;
+    private final Seq<Money> moneys;
 
     public Portfolio() {
-        this.moneys = new ArrayList<>();
+        this.moneys = Vector.empty();
     }
 
-    private Portfolio(List<Money> moneys) {
-        this.moneys = Collections.unmodifiableList(moneys);
+    private Portfolio(Seq<Money> moneys) {
+        this.moneys = moneys;
     }
 
     public Portfolio add(Money money) {
-        var updatedMoneys = new ArrayList<>(moneys);
-        updatedMoneys.add(money);
-
-        return new Portfolio(updatedMoneys);
+        return new Portfolio(moneys.append(money));
     }
 
     public Either<String, Money> evaluate(Bank bank, Currency toCurrency) {
@@ -36,32 +30,26 @@ public final class Portfolio {
                 : right(sumConvertedMoney(convertedMoneys, toCurrency));
     }
 
-    private Money sumConvertedMoney(List<Either<String, Money>> convertedMoneys, Currency toCurrency) {
-        return new Money(convertedMoneys.stream()
+    private Seq<Either<String, Money>> convertAllMoneys(Bank bank, Currency toCurrency) {
+        return moneys.map(money -> bank.convert(money, toCurrency));
+    }
+
+    private boolean containsFailure(Seq<Either<String, Money>> convertedMoneys) {
+        return convertedMoneys.exists(Either::isLeft);
+    }
+
+    private String toFailure(Seq<Either<String, Money>> convertedMoneys) {
+        return convertedMoneys
+                .filter(Either::isLeft)
+                .map(e -> String.format("[%s]", e.getLeft()))
+                .mkString("Missing exchange rate(s): ", ",", "");
+    }
+
+    private Money sumConvertedMoney(Seq<Either<String, Money>> convertedMoneys, Currency toCurrency) {
+        return new Money(convertedMoneys
                 .filter(Either::isRight)
                 .map(e -> e.getOrElse(new Money(0, toCurrency)))
-                .mapToDouble(Money::amount)
-                .sum(), toCurrency);
-    }
-
-    private String toFailure(List<Either<String, Money>> convertedMoneys) {
-        return convertedMoneys.stream()
-                .filter(Either::isLeft)
-                .map(Either::getLeft)
-                .map(e -> String.format("[%s]", e))
-                .collect(Collectors.joining(",", "Missing exchange rate(s): ", ""));
-    }
-
-    private boolean containsFailure(List<Either<String, Money>> convertedMoneys) {
-        return convertedMoneys
-                .stream()
-                .anyMatch(Either::isLeft);
-    }
-
-    private List<Either<String, Money>> convertAllMoneys(Bank bank, Currency toCurrency) {
-        return moneys.stream()
-                .map(money -> bank.convert(money, toCurrency))
-                .toList();
+                .map(Money::amount)
+                .reduce(Double::sum), toCurrency);
     }
 }
-
