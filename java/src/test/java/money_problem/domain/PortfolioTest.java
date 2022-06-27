@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import static money_problem.domain.Currency.*;
 import static money_problem.domain.DomainUtility.*;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.vavr.api.VavrAssertions.assertThat;
 
 class PortfolioTest {
     private Bank bank;
@@ -25,9 +25,8 @@ class PortfolioTest {
                 dollars(10)
         );
 
-        assertThat(portfolio.evaluate(bank, USD)
-                .money())
-                .isEqualTo(dollars(15));
+        assertThat(portfolio.evaluate(bank, USD))
+                .containsOnRight(dollars(15));
     }
 
     @Test
@@ -38,9 +37,8 @@ class PortfolioTest {
                 euros(10)
         );
 
-        assertThat(portfolio.evaluate(bank, USD)
-                .money())
-                .isEqualTo(dollars(17));
+        assertThat(portfolio.evaluate(bank, USD))
+                .containsOnRight(dollars(17));
     }
 
     @Test
@@ -51,9 +49,8 @@ class PortfolioTest {
                 koreanWons(1100)
         );
 
-        assertThat(portfolio.evaluate(bank, KRW)
-                .money())
-                .isEqualTo(koreanWons(2200));
+        assertThat(portfolio.evaluate(bank, KRW))
+                .containsOnRight(koreanWons(2200));
     }
 
     @Test
@@ -65,9 +62,8 @@ class PortfolioTest {
                 euros(4)
         );
 
-        assertThat(portfolio.evaluate(bank, USD)
-                .money())
-                .isEqualTo(dollars(21.8));
+        assertThat(portfolio.evaluate(bank, USD))
+                .containsOnRight(dollars(21.8));
     }
 
     @Test
@@ -79,8 +75,7 @@ class PortfolioTest {
                 koreanWons(1)
         );
 
-        assertThat(portfolio.evaluate(bank, EUR)
-                .failure())
-                .isEqualTo("Missing exchange rate(s): [USD->EUR],[KRW->EUR]");
+        assertThat(portfolio.evaluate(bank, EUR))
+                .containsOnLeft("Missing exchange rate(s): [USD->EUR],[KRW->EUR]");
     }
 }

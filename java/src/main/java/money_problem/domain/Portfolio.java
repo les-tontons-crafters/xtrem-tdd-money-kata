@@ -1,12 +1,14 @@
 package money_problem.domain;
 
+import io.vavr.control.Either;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static money_problem.domain.ConversionResult.fromFailure;
-import static money_problem.domain.ConversionResult.fromSuccess;
+import static io.vavr.control.Either.left;
+import static io.vavr.control.Either.right;
 
 public final class Portfolio {
     private final List<Money> moneys;
@@ -26,38 +28,40 @@ public final class Portfolio {
         return new Portfolio(updatedMoneys);
     }
 
-    public ConversionResult<String> evaluate(Bank bank, Currency toCurrency) {
+    public Either<String, Money> evaluate(Bank bank, Currency toCurrency) {
         var convertedMoneys = convertAllMoneys(bank, toCurrency);
 
         return containsFailure(convertedMoneys)
-                ? fromFailure(toFailure(convertedMoneys))
-                : fromSuccess(sumConvertedMoney(convertedMoneys, toCurrency));
+                ? left(toFailure(convertedMoneys))
+                : right(sumConvertedMoney(convertedMoneys, toCurrency));
     }
 
-    private Money sumConvertedMoney(List<ConversionResult<String>> convertedMoneys, Currency toCurrency) {
+    private Money sumConvertedMoney(List<Either<String, Money>> convertedMoneys, Currency toCurrency) {
         return new Money(convertedMoneys.stream()
-                .filter(ConversionResult::isSuccess)
-                .mapToDouble(c -> c.money().amount())
+                .filter(Either::isRight)
+                .map(e -> e.getOrElse(new Money(0, toCurrency)))
+                .mapToDouble(Money::amount)
                 .sum(), toCurrency);
     }
 
-    private String toFailure(List<ConversionResult<String>> convertedMoneys) {
+    private String toFailure(List<Either<String, Money>> convertedMoneys) {
         return convertedMoneys.stream()
-                .filter(ConversionResult::isFailure)
-                .map(ConversionResult::failure)
+                .filter(Either::isLeft)
+                .map(Either::getLeft)
                 .map(e -> String.format("[%s]", e))
                 .collect(Collectors.joining(",", "Missing exchange rate(s): ", ""));
     }
 
-    private boolean containsFailure(List<ConversionResult<String>> convertedMoneys) {
+    private boolean containsFailure(List<Either<String, Money>> convertedMoneys) {
         return convertedMoneys
                 .stream()
-                .anyMatch(ConversionResult::isFailure);
+                .anyMatch(Either::isLeft);
     }
 
-    private List<ConversionResult<String>> convertAllMoneys(Bank bank, Currency toCurrency) {
+    private List<Either<String, Money>> convertAllMoneys(Bank bank, Currency toCurrency) {
         return moneys.stream()
                 .map(money -> bank.convert(money, toCurrency))
                 .toList();
     }
 }
+
