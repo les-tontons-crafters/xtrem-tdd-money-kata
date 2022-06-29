@@ -10,9 +10,7 @@ import io.vavr.control.Either;
 import money_problem.domain.Bank;
 import money_problem.domain.Currency;
 import money_problem.domain.Money;
-import org.assertj.core.api.AbstractDoubleAssert;
 import org.assertj.core.api.Assertions;
-import org.assertj.core.data.Offset;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -66,9 +64,10 @@ public class BankProperties {
                 .flatMap(convertedMoney -> bank.convert(convertedMoney, originalMoney.currency()));
     }
 
-    private AbstractDoubleAssert<?> assertThatAmountAreClosed(Money originalMoney, Money roundTripMoney) {
-        return Assertions.assertThat(roundTripMoney.amount())
-                .isCloseTo(originalMoney.amount(), Offset.offset(toleranceFor(originalMoney)));
+    private void assertThatAmountAreClosed(Money originalMoney, Money roundTripMoney) {
+        Assertions.assertThat(
+                Math.abs(roundTripMoney.amount() - originalMoney.amount()) < toleranceFor(originalMoney)
+        ).isTrue();
     }
 
     private double toleranceFor(Money originalMoney) {
