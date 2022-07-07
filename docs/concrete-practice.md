@@ -99,6 +99,7 @@ In this workshop, we will make those iterations:
 - No more state mutation
    - [Only immutable types](https://xtrem-tdd.netlify.app/Flavours/immutable-types)
 - [No exception authorized](https://xtrem-tdd.netlify.app/Flavours/avoid-exceptions)
+- [Use an existing monad](https://xtrem-tdd.netlify.app/Flavours/monads)
 
 ### Solution
 We have created 1 branch per constraint
