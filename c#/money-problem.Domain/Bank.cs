@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
+using LanguageExt;
 
 namespace money_problem.Domain
 {
@@ -31,9 +32,9 @@ namespace money_problem.Domain
         private bool CanConvert(Currency from, Currency to) =>
                 from == to || _exchangeRates.ContainsKey(KeyFor(from, to));
 
-        public ConversionResult<string> Convert(Money money, Currency to) =>
-            this.CanConvert(money.Currency, to)
-                ? ConversionResult<string>.FromMoney(ConvertSafely(money, to))
-                : ConversionResult<string>.FromFailure($"{money.Currency}->{to}");
+        public Either<string, Money> Convert(Money money, Currency currency) =>
+            this.CanConvert(money.Currency, currency)
+                ? Either<string, Money>.Right(this.ConvertSafely(money, currency))
+                : Either<string, Money>.Left($"{money.Currency}->{currency}");
     }
 }
