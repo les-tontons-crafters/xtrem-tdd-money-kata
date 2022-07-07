@@ -12,6 +12,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		docs\4.no-for-loops.md = docs\4.no-for-loops.md
 		docs\5.only-immutable-types.md = docs\5.only-immutable-types.md
 		docs\6.no-exception-authorized.md = docs\6.no-exception-authorized.md
+		docs\7.use-existing-monad.md = docs\7.use-existing-monad.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "img", "img", "{5A27C3EC-2B31-47AD-BA8C-41C56B4A111A}"
@@ -29,6 +30,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "img", "img", "{5A27C3EC-2B3
 		docs\img\ImmutableTypesPortfolioAdd.png = docs\img\ImmutableTypesPortfolioAdd.png
 		docs\img\ImmutableTypesWrapTechnique.png = docs\img\ImmutableTypesWrapTechnique.png
 		docs\img\ImmutableTypesPortfolioAddWrap.png = docs\img\ImmutableTypesPortfolioAddWrap.png
+		docs\img\LanguageExtMonads.png = docs\img\LanguageExtMonads.png
 	EndProjectSection
 EndProject
 Global

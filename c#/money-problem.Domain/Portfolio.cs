@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using LanguageExt;
 
 namespace money_problem.Domain;
 
@@ -35,7 +36,7 @@ public class Portfolio
         .Select(value => $"[{value}]")
         .Aggregate((r1, r2) => $"{r1},{r2}");
 
-    public ConversionResult<string> Evaluate(Bank bank, Currency currency)
+    public ConversionResult<string> EvaluateWithConversionResult(Bank bank, Currency currency)
     {
         var results = this.GetConvertedMoneys(bank, currency);
         return ContainsFailure(results)
@@ -48,4 +49,12 @@ public class Portfolio
 
     private Money ToSuccess(IEnumerable<ConversionResult<string>> results, Currency currency) =>
         new(results.Where(result => result.IsSuccess()).Sum(result => result.Money!.Amount), currency);
+
+    public Either<string, Money> Evaluate(Bank bank, Currency currency)
+    {
+        var results = this.GetConvertedMoneys(bank, currency);
+        return ContainsFailure(results)
+            ? Either<string, Money>.Left(this.ToFailure(results))
+            : Either<string, Money>.Right(this.ToSuccess(results, currency));
+    }
 }
