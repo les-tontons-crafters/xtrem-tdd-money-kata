@@ -1,50 +1,47 @@
 package domain
 
-import domain.ConversionResult.{fromFailure, fromSuccess}
 import domain.Currency.Currency
 
 sealed class Portfolio(private val moneys: Money*) {
   def add(money: Money): Portfolio =
     new Portfolio(moneys :+ money: _*)
 
-  def evaluate(bank: Bank, toCurrency: Currency): ConversionResult[String] = {
+  def evaluate(bank: Bank, toCurrency: Currency): Either[String, Money] = {
     val convertedMoneys = convertMoneys(bank, toCurrency)
 
     if (containsFailure(convertedMoneys))
-      fromFailure(toFailure(convertedMoneys))
-    else
-      fromSuccess(sumConvertedMoney(toCurrency, convertedMoneys))
-  }
-
-  private def sumConvertedMoney(
-      toCurrency: Currency,
-      convertedMoneys: Seq[ConversionResult[String]]
-  ): Money = {
-    Money(
-      convertedMoneys
-        .flatMap(_.money)
-        .foldLeft(0d)((acc, money) => acc + money.amount),
-      toCurrency
-    )
-  }
-
-  private def toFailure(
-      convertedMoneys: Seq[ConversionResult[String]]
-  ): String = {
-    convertedMoneys
-      .flatMap(_.failure)
-      .map(failure => s"[$failure]")
-      .mkString("Missing exchange rate(s): ", ",", "")
+      Left(toFailure(convertedMoneys))
+    else Right(sumConvertedMoney(toCurrency, convertedMoneys))
   }
 
   private def convertMoneys(
       bank: Bank,
       toCurrency: Currency
-  ): Seq[ConversionResult[String]] =
+  ): Seq[Either[String, Money]] =
     moneys.map(money => bank.convert(money, toCurrency))
 
+  private def sumConvertedMoney(
+      toCurrency: Currency,
+      convertedMoneys: Seq[Either[String, Money]]
+  ): Money = {
+    Money(
+      convertedMoneys
+        .collect { case Right(x) => x }
+        .foldLeft(0d)((acc, money) => acc + money.amount),
+      toCurrency
+    )
+  }
+
   private def containsFailure(
-      convertedMoneys: Seq[ConversionResult[String]]
-  ): Boolean =
-    convertedMoneys.exists(_.isFailure)
+      convertedMoneys: Seq[Either[String, Money]]
+  ): Boolean = convertedMoneys.exists(_.isLeft)
+
+  private def toFailure(
+      convertedMoneys: Seq[Either[String, Money]]
+  ): String = {
+    convertedMoneys
+      .collect { case Left(x) => x }
+      .map(failure => s"[$failure]")
+      .mkString("Missing exchange rate(s): ", ",", "")
+  }
 }
