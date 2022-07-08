@@ -27,10 +27,11 @@ public class Portfolio
         results.Any(result => result.IsLeft);
 
     private string ToFailure(IEnumerable<Either<string, Money>> results) =>
-        $"Missing exchange rate(s): {GetMissingRates(results.Where(result => result.IsLeft).Select(result => result.IfRight(string.Empty)))}";
+        $"Missing exchange rate(s): {GetMissingRates(results)}";
 
-    private static string GetMissingRates(IEnumerable<string> missingRates) => missingRates
-        .Select(value => $"[{value}]")
+    private static string GetMissingRates(IEnumerable<Either<string, Money>> missingRates) => missingRates
+        .Match(money => string.Empty, failure => $"[{failure}]")
+        .Where(message => !string.IsNullOrEmpty(message))
         .Aggregate((r1, r2) => $"{r1},{r2}");
 
     private Money ToSuccess(IEnumerable<Either<string, Money>> results, Currency currency) =>
