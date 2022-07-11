@@ -3,12 +3,13 @@ package domain
 import domain.Currency._
 import domain.DomainExtensions.MoneyExtensions
 import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.{BeforeAndAfterEach, OptionValues}
+import org.scalatest.{BeforeAndAfterEach, EitherValues, OptionValues}
 
 class PortfolioShould
     extends AnyFunSuite
     with BeforeAndAfterEach
-    with OptionValues {
+    with OptionValues
+    with EitherValues {
   private var bank: Bank = _
 
   override def beforeEach(): Unit = {
@@ -22,7 +23,7 @@ class PortfolioShould
       portfolioWith(
         5.dollars(),
         10.dollars()
-      ).evaluate(bank, USD).money.value == 15.dollars()
+      ).evaluate(bank, USD).value == 15.dollars()
     )
   }
 
@@ -31,7 +32,7 @@ class PortfolioShould
       portfolioWith(
         5.dollars(),
         10.euros()
-      ).evaluate(bank, USD).money.value == 17.dollars()
+      ).evaluate(bank, USD).value == 17.dollars()
     )
   }
 
@@ -40,7 +41,7 @@ class PortfolioShould
       portfolioWith(
         1.dollars(),
         1100.koreanWons()
-      ).evaluate(bank, KRW).money.value == 2200.koreanWons()
+      ).evaluate(bank, KRW).value == 2200.koreanWons()
     )
   }
 
@@ -50,7 +51,7 @@ class PortfolioShould
         5.dollars(),
         10.euros(),
         4.euros()
-      ).evaluate(bank, USD).money.value == 21.8.dollars()
+      ).evaluate(bank, USD).value == 21.8.dollars()
     )
   }
 
@@ -63,7 +64,7 @@ class PortfolioShould
         1.dollars(),
         1.koreanWons()
       ).evaluate(bank, EUR)
-        .failure
+        .left
         .value == "Missing exchange rate(s): [USD->EUR],[KRW->EUR]"
     )
   }

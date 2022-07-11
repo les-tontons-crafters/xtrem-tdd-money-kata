@@ -1,51 +1,44 @@
-using System.Collections.Immutable;
+using LanguageExt;
 
 namespace money_problem.Domain;
 
 public class Portfolio
 {
-    private readonly ICollection<Money> moneys;
+    private readonly Seq<Money> moneys;
 
-    public Portfolio()
+    public Portfolio() => this.moneys = Seq<Money>.Empty;
+
+    private Portfolio(Seq<Money> moneys) => this.moneys = moneys;
+
+    public Either<string, Money> Evaluate(Bank bank, Currency currency)
     {
-        this.moneys = new List<Money>();
+        var results = this.GetConvertedMoneys(bank, currency);
+        return ContainsFailure(results)
+            ? Either<string, Money>.Left(this.ToFailure(results))
+            : Either<string, Money>.Right(this.ToSuccess(results, currency));
     }
 
-    private Portfolio(IEnumerable<Money> moneys)
-    {
-        this.moneys = moneys.ToImmutableList();
-    }
-
-    private static bool ContainsFailure(IEnumerable<ConversionResult<string>> results) =>
-        results.Any(result => result.IsFailure());
-
-    private List<ConversionResult<string>> GetConvertedMoneys(Bank bank, Currency currency) =>
+    private List<Either<string, Money>> GetConvertedMoneys(Bank bank, Currency currency) =>
         this.moneys
             .Select(money => bank.Convert(money, currency))
             .ToList();
 
-    public Portfolio Add(Money money)
-    {
-        List<Money> updatedMoneys = this.moneys.ToList();
-        updatedMoneys.Add(money);
-        return new Portfolio(updatedMoneys);
-    }
+    private static bool ContainsFailure(IEnumerable<Either<string, Money>> results) =>
+        results.Any(result => result.IsLeft);
 
-    private static string GetMissingRates(IEnumerable<string> missingRates) => missingRates
-        .Select(value => $"[{value}]")
+    private string ToFailure(IEnumerable<Either<string, Money>> results) =>
+        $"Missing exchange rate(s): {GetMissingRates(results)}";
+
+    private static string GetMissingRates(IEnumerable<Either<string, Money>> missingRates) => missingRates
+        .Match(money => string.Empty, failure => $"[{failure}]")
+        .Where(message => !string.IsNullOrEmpty(message))
         .Aggregate((r1, r2) => $"{r1},{r2}");
 
-    public ConversionResult<string> Evaluate(Bank bank, Currency currency)
-    {
-        var results = this.GetConvertedMoneys(bank, currency);
-        return ContainsFailure(results)
-            ? ConversionResult<string>.FromFailure(this.ToFailure(results))
-            : ConversionResult<string>.FromMoney(this.ToSuccess(results, currency));
-    }
+    private Money ToSuccess(IEnumerable<Either<string, Money>> results, Currency currency) =>
+        new(results
+                .Where(result => result.IsRight)
+                .Sum(result => result.IfLeft(Money.Empty(currency)).Amount),
+            currency);
 
-    private string ToFailure(IEnumerable<ConversionResult<string>> results) =>
-        $"Missing exchange rate(s): {GetMissingRates(results.Where(result => result.IsFailure()).Select(result => result.Failure!))}";
-
-    private Money ToSuccess(IEnumerable<ConversionResult<string>> results, Currency currency) =>
-        new(results.Where(result => result.IsSuccess()).Sum(result => result.Money!.Amount), currency);
+    public Portfolio Add(Money money) => new(this.moneys.Add(money));
 }
