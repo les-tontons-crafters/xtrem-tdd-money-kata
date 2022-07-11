@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Extensions;
+using FluentAssertions.LanguageExt;
+using LanguageExt;
 using money_problem.Domain;
 using Xunit;
 using Xunit.Sdk;
@@ -24,7 +26,6 @@ public class PortfolioTest
     public void Add_ShouldAddMoneyInDollarAndEuro() =>
         PortfolioWith(5d.Dollars(), 10d.Euros())
             .Evaluate(this.bank, Currency.USD)
-            .Money
             .Should()
             .Be(17d.Dollars());
 
@@ -32,7 +33,6 @@ public class PortfolioTest
     public void Add_ShouldAddMoneyInDollarAndKoreanWons() =>
         PortfolioWith(1d.Dollars(), 1100d.KoreanWons())
             .Evaluate(this.bank, Currency.KRW)
-            .Money
             .Should()
             .Be(2200d.KoreanWons());
 
@@ -40,7 +40,6 @@ public class PortfolioTest
     public void Add_ShouldAddMoneyInDollarsAndMultipleAmountInEuros() =>
         PortfolioWith(5d.Dollars(), 10d.Euros(), 4d.Euros())
             .Evaluate(bank, Currency.USD)
-            .Money
             .Should()
             .Be(21.8.Dollars());
 
@@ -49,17 +48,16 @@ public class PortfolioTest
     {
         PortfolioWith(1d.Euros(), 1d.Dollars(), 1d.KoreanWons())
             .Evaluate(this.bank, Currency.EUR)
-            .Failure
             .Should()
             .Be("Missing exchange rate(s): [USD->EUR],[KRW->EUR]");
     }
 
     [Fact(DisplayName = "5 USD + 10 USD = 15 USD")]
-    public void Add_ShouldAddMoneyInTheSameCurrency()
-    {
+    public void Add_ShouldAddMoneyInTheSameCurrency() =>
         PortfolioWith(5d.Dollars(), 10d.Dollars())
-            .Evaluate(bank, Currency.USD).Money.Should().Be(15d.Dollars());
-    }
+            .Evaluate(bank, Currency.USD)
+            .Should()
+            .Be(15d.Dollars());
 
     private static Portfolio PortfolioWith(params Money[] moneys) =>
         moneys.Aggregate(new Portfolio(), (portfolio, money) => portfolio.Add(money));
