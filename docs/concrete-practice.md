@@ -49,50 +49,31 @@ Bank implementation :
 ✅ Allow exchange rates to be modified
 ```
 
-From now on, we would like to handle operations between amounts in different currencies:
-- [ ] 5 USD + 10 EUR = 17 USD
-- [ ] 1 USD + 1100 KRW = 2200 KRW
-
-We need to bring a new business concept to out implementation: a `Portfolio`.
-
-Basically, a `Portfolio` contains a **list of amounts in various currencies**. Taking our first example above, it could contain `5 USD` and `10 EUR`.
-
-We should be able to **evaluate** the full `Portfolio` amount in a **given currency**:
-- `USD` => `17 USD`
-- `EUR` => `14,1 EUR`
-- `KRW` => `18940 KRW`
-- etc.
-
-Your mission for this kata will be to implement the `Portfolio`.
-
 ## Constraints
 You will have to develop using the main constraints:
 
 - Test-Driven Development
 - Pair Programming
 
-### Xtrem iteration
-We will work in small iterations (20')
+### Xtrem Iteration
+We will work in small iterations
 
 ![Xtrem iteration](img/xtrem-tdd.png)
 
-- Share the constraint - **1'**
-- Implement it in your code - **24'**
-- Debriefing - **5'**
+- Share the constraint
+- Implement it in your code
+- Debriefing
 	- How did you apply it?
 	- What did you learn?
 	- How could it be useful in your current code base?
 	- Our solution
 		- Keep your code or switch to our solution branch to move on
 
-### Workshop constraints
-In this workshop, we will make those iterations:
+### Iterations
+In this workshop, we will make those iterations in this order:
 
-- Let's mutate the production code
-	- Run code coverage
-   - [Mutation Testing](https://xtrem-tdd.netlify.app/Flavours/mutation-testing)
-- Implement missing features using TDD
-   - [Generate Code From Usage](https://xtrem-tdd.netlify.app/Flavours/generate-code-from-usage)
+- [Let's mutate some code](facilitation/1.mutation-testing.md)
+- [Implement Portfolio](facilitation/2.portfolio.md)
 - Stop [Primitive obsession](https://refactoring.guru/fr/smells/primitive-obsession)
    - [No Primitive Types](https://xtrem-tdd.netlify.app/Flavours/no-primitive-types)
 - [No for loops](https://xtrem-tdd.netlify.app/Flavours/no-for-loops)
