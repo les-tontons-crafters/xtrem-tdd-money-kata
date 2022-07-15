@@ -1,53 +1,49 @@
 package domain
 
-import domain.BankProperties.{bank, currencyGenerator, roundTripConvert}
+import domain.BankProperties.{
+  amountsAreClosed,
+  bank,
+  currencyGenerator,
+  moneyGenerator,
+  roundTripConvert
+}
 import domain.Currency._
 import org.scalacheck.Prop.forAll
 import org.scalacheck.{Arbitrary, Gen}
-import org.scalactic.Tolerance.convertNumericToPlusOrMinusWrapper
 import org.scalatest.EitherValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
 
+import java.lang.Math._
+
 class BankProperties extends AnyFunSuite with Checkers with EitherValues {
   test("convert in same currency should return original Money") {
-    forAll { (originalAmount: Double, currency: Currency) =>
-      {
-        val originalMoney = Money(originalAmount, currency)
-        bank.convert(originalMoney, currency).value == originalMoney
-      }
-    }.check()
+    check(forAll { (originalMoney: Money) =>
+      bank
+        .convert(originalMoney, originalMoney.currency)
+        .value == originalMoney
+    })
   }
 
   test("round tripping in different currencies") {
-    forAll { (originalAmount: Double, from: Currency, to: Currency) =>
+    check(forAll { (originalMoney: Money, to: Currency) =>
       {
-        roundTripConvert(originalAmount, from, to).value == Money(
-          originalAmount,
-          from
+        amountsAreClosed(
+          originalMoney,
+          roundTripConvert(originalMoney, to).value
         )
       }
-    }.check()
+    })
   }
-
-  test("round trip in error") {
-    val originalAmount = -2.1645893211081448e69
-    val roundTripAmount = roundTripConvert(originalAmount, EUR, USD).value
-
-    assert(roundTripAmount.amount === originalAmount +- 0.01)
-  }
-
-  private def toleranceFor(originalAmount: Double): Double =
-    Math.abs(0.01 * originalAmount)
 }
 
 object BankProperties {
   private val exchangeRates: Map[(Currency, Currency), Double] = Map(
-    (EUR, USD) -> 1.2,
-    (USD, EUR) -> 0.82,
-    (USD, KRW) -> 1100d,
-    (KRW, USD) -> 0.0009,
-    (EUR, KRW) -> 1344d,
+    (EUR, USD) -> 1.0567,
+    (USD, EUR) -> 0.9466,
+    (USD, KRW) -> 1302.0811,
+    (KRW, USD) -> 0.00076801737,
+    (EUR, KRW) -> 1368.51779,
     (KRW, EUR) -> 0.00073
   )
 
@@ -66,17 +62,37 @@ object BankProperties {
       }
 
   private def roundTripConvert(
-      originalAmount: Double,
-      from: Currency,
+      originalMoney: Money,
       to: Currency
-  ): Either[String, Money] = {
+  ): Either[String, Money] =
     bank
-      .convert(Money(originalAmount, from), to)
-      .flatMap(convertedMoney => bank.convert(convertedMoney, from))
-  }
+      .convert(originalMoney, to)
+      .flatMap(convertedMoney =>
+        bank.convert(convertedMoney, originalMoney.currency)
+      )
+
+  private def amountsAreClosed(
+      originalMoney: Money,
+      roundTripMoney: Money
+  ): Boolean =
+    abs(roundTripMoney.amount - originalMoney.amount) <=
+      toleranceFor(originalMoney)
+
+  private def toleranceFor(money: Money): Double =
+    abs(0.01 * money.amount)
 
   implicit def currencyGenerator: Arbitrary[Currency] =
     Arbitrary {
       Gen.oneOf(Currency.values.toSeq)
+    }
+
+  private val maxAmount = 1_000_000_000
+
+  implicit def moneyGenerator: Arbitrary[Money] =
+    Arbitrary {
+      for {
+        amount <- Gen.choose(-maxAmount, maxAmount)
+        currency <- Arbitrary.arbitrary[Currency]
+      } yield Money(amount, currency)
     }
 }
