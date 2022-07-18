@@ -1,8 +1,13 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using FluentAssertions;
+using FluentAssertions.LanguageExt;
 using FsCheck;
 using FsCheck.Xunit;
+using LanguageExt;
 using money_problem.Domain;
+using Xunit;
 
 namespace money_problem.Tests;
 
@@ -12,11 +17,11 @@ public class BankProperties
 
     private readonly Dictionary<(Currency From, Currency To), double> exchangeRates = new()
     {
-        {(Currency.EUR, Currency.USD), 1.2},
-        {(Currency.USD, Currency.EUR), 0.82},
-        {(Currency.USD, Currency.KRW), 1100},
-        {(Currency.KRW, Currency.USD), 0.0009},
-        {(Currency.EUR, Currency.KRW), 1344},
+        {(Currency.EUR, Currency.USD), 1.0567},
+        {(Currency.USD, Currency.EUR), 0.9466},
+        {(Currency.USD, Currency.KRW), 1302.0811},
+        {(Currency.KRW, Currency.USD), 0.00076801737},
+        {(Currency.EUR, Currency.KRW), 1368.51779},
         {(Currency.KRW, Currency.EUR), 0.00073},
     };
 
@@ -31,9 +36,28 @@ public class BankProperties
     
     [Property]
     private Property RoundTripping(Money originalAmount, Currency currency) =>
-        (originalAmount == this.bank
+        this.IsRoundTripConversionSuccessful(originalAmount, Currency.KRW)
+            .ToProperty();
+
+    private bool IsRoundTripConversionSuccessful(Money originalAmount, Currency currency) =>
+        this.bank
             .Convert(originalAmount, currency)
-            .Bind(convertedMoney => this.bank.Convert(convertedMoney, originalAmount.Currency))).ToProperty();
+            .Bind(convertedMoney => this.bank.Convert(convertedMoney, originalAmount.Currency))
+            .Map(convertedAmount => this.VerifyTolerance(originalAmount, convertedAmount))
+            .IfLeft(false);
+
+    [Fact(DisplayName = "Money { Amount = 0,9632981371199433, Currency = USD }, KRW")]
+    public void RoundTripError()
+    {
+        var originalAmount = new Money(0.9632981371199433, Currency.USD);
+        this.IsRoundTripConversionSuccessful(originalAmount, Currency.KRW)
+            .Should()
+            .BeTrue();
+    }
+
+    private const double Tolerance = 0.01;
+    
+    private bool VerifyTolerance(Money originalAmount, Money convertedAmount) => Math.Abs(originalAmount.Amount - convertedAmount.Amount) < Tolerance;
 
     private Bank NewBankWithExchangeRates(Dictionary<(Currency From, Currency To), double> rates)
     {

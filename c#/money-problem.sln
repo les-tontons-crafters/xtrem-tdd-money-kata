@@ -34,6 +34,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "img", "img", "{5A27C3EC-2B3
 		docs\img\LanguageExtMonads.png = docs\img\LanguageExtMonads.png
 		docs\img\LanguageExtMutant.png = docs\img\LanguageExtMutant.png
 		docs\img\PropertyBasedTime.png = docs\img\PropertyBasedTime.png
+		docs\img\PropertyBasedFailure.png = docs\img\PropertyBasedFailure.png
+		docs\img\PropertyBasedRoundTrippingError.png = docs\img\PropertyBasedRoundTrippingError.png
+		docs\img\PropertyBasedFailureInfinite.png = docs\img\PropertyBasedFailureInfinite.png
+		docs\img\PropertyBasedFailureSmallNumber.png = docs\img\PropertyBasedFailureSmallNumber.png
 	EndProjectSection
 EndProject
 Global
