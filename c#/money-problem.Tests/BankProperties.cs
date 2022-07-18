@@ -2,10 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
-using FluentAssertions.LanguageExt;
 using FsCheck;
 using FsCheck.Xunit;
-using LanguageExt;
 using money_problem.Domain;
 using Xunit;
 
@@ -13,6 +11,7 @@ namespace money_problem.Tests;
 
 public class BankProperties
 {
+    private const double Tolerance = 0.01;
     private readonly Bank bank;
 
     private readonly Dictionary<(Currency From, Currency To), double> exchangeRates = new()
@@ -28,15 +27,16 @@ public class BankProperties
     public BankProperties()
     {
         this.bank = this.NewBankWithExchangeRates(this.exchangeRates);
+        Arb.Register<MoneyGenerator>();
     }
 
     [Property]
     private Property ConvertInSameCurrencyShouldReturnOriginalMoney(Money originalAmount) =>
         (originalAmount == this.bank.Convert(originalAmount, originalAmount.Currency)).ToProperty();
-    
+
     [Property]
     private Property RoundTripping(Money originalAmount, Currency currency) =>
-        this.IsRoundTripConversionSuccessful(originalAmount, Currency.KRW)
+        this.IsRoundTripConversionSuccessful(originalAmount, currency)
             .ToProperty();
 
     private bool IsRoundTripConversionSuccessful(Money originalAmount, Currency currency) =>
@@ -55,9 +55,10 @@ public class BankProperties
             .BeTrue();
     }
 
-    private const double Tolerance = 0.01;
-    
-    private bool VerifyTolerance(Money originalAmount, Money convertedAmount) => Math.Abs(originalAmount.Amount - convertedAmount.Amount) < Tolerance;
+    private bool VerifyTolerance(Money originalAmount, Money convertedAmount) =>
+        Math.Abs(originalAmount.Amount - convertedAmount.Amount) <= GetTolerance(originalAmount);
+
+    private double GetTolerance(Money originalMoney) => Math.Abs(originalMoney.Amount * Tolerance);
 
     private Bank NewBankWithExchangeRates(Dictionary<(Currency From, Currency To), double> rates)
     {
