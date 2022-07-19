@@ -1,9 +1,8 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using FluentAssertions;
 using FsCheck;
 using FsCheck.Xunit;
+using LanguageExt;
 using money_problem.Domain;
 using Xunit;
 
@@ -14,19 +13,18 @@ public class BankProperties
     private const double Tolerance = 0.01;
     private readonly Bank bank;
 
-    private readonly Dictionary<(Currency From, Currency To), double> exchangeRates = new()
-    {
-        {(Currency.EUR, Currency.USD), 1.0567},
-        {(Currency.USD, Currency.EUR), 0.9466},
-        {(Currency.USD, Currency.KRW), 1302.0811},
-        {(Currency.KRW, Currency.USD), 0.00076801737},
-        {(Currency.EUR, Currency.KRW), 1368.51779},
-        {(Currency.KRW, Currency.EUR), 0.00073},
-    };
+    private readonly Seq<ExchangeRate> exchangeRates = new Seq<ExchangeRate>()
+        .Add(new ExchangeRate(Currency.EUR, Currency.USD, 1.0567))
+        .Add(new ExchangeRate(Currency.USD, Currency.EUR, 0.9466))
+        .Add(new ExchangeRate(Currency.USD, Currency.KRW, 1302.0811))
+        .Add(new ExchangeRate(Currency.KRW, Currency.USD, 0.00076801737))
+        .Add(new ExchangeRate(Currency.EUR, Currency.KRW, 1368.51779))
+        .Add(new ExchangeRate(Currency.KRW, Currency.EUR, 0.00073));
 
     public BankProperties()
     {
-        this.bank = this.NewBankWithExchangeRates(this.exchangeRates);
+        this.bank = this.exchangeRates.Aggregate(Bank.WithExchangeRates(),
+            (aggregatedBank, exchange) => aggregatedBank.AddExchangeRate(exchange));
         Arb.Register<MoneyGenerator>();
     }
 
@@ -59,16 +57,4 @@ public class BankProperties
         Math.Abs(originalAmount.Amount - convertedAmount.Amount) <= GetTolerance(originalAmount);
 
     private double GetTolerance(Money originalMoney) => Math.Abs(originalMoney.Amount * Tolerance);
-
-    private Bank NewBankWithExchangeRates(Dictionary<(Currency From, Currency To), double> rates)
-    {
-        return rates.Aggregate(this.NewBank(),
-            (aggregatedBank, pair) => aggregatedBank.AddExchangeRate(pair.Key.From, pair.Key.To, pair.Value));
-    }
-
-    private Bank NewBank()
-    {
-        var firstEntry = exchangeRates.First();
-        return Bank.WithExchangeRate(firstEntry.Key.From, firstEntry.Key.To, firstEntry.Value);
-    }
 }

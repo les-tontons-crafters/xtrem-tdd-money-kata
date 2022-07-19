@@ -18,8 +18,9 @@ public class PortfolioTest
     public PortfolioTest()
     {
         this.bank = Bank
-            .WithExchangeRate(Currency.EUR, Currency.USD, 1.2)
-            .AddExchangeRate(Currency.USD, Currency.KRW, 1100);
+            .WithExchangeRates(
+                new ExchangeRate(Currency.EUR, Currency.USD, 1.2), 
+                new ExchangeRate(Currency.USD, Currency.KRW, 1100));
     }
 
     [Fact(DisplayName = "5 USD + 10 EUR = 17 USD")]
