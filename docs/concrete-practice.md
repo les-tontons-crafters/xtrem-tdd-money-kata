@@ -79,6 +79,7 @@ In this workshop, we will make those iterations in this order:
 5. [Use Only Immutable Types](facilitation/5.only-immutable-types.md)
 6. [Avoid Exceptions](facilitation/6.no-exception-authorized.md)
 7. [Use an existing monad](facilitation/7.use-existing-monad.md)
+8. [Property-Based Testing to challenge our Domain Model](facilitation/8.bank-properties.md)
 
 ### Solution
 We have created 1 branch per iteration solution
