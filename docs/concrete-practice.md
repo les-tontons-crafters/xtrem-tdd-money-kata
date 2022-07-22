@@ -49,63 +49,44 @@ Bank implementation :
 ✅ Allow exchange rates to be modified
 ```
 
-From now on, we would like to handle operations between amounts in different currencies:
-- [ ] 5 USD + 10 EUR = 17 USD
-- [ ] 1 USD + 1100 KRW = 2200 KRW
-
-We need to bring a new business concept to out implementation: a `Portfolio`.
-
-Basically, a `Portfolio` contains a **list of amounts in various currencies**. Taking our first example above, it could contain `5 USD` and `10 EUR`.
-
-We should be able to **evaluate** the full `Portfolio` amount in a **given currency**:
-- `USD` => `17 USD`
-- `EUR` => `14,1 EUR`
-- `KRW` => `18940 KRW`
-- etc.
-
-Your mission for this kata will be to implement the `Portfolio`.
-
 ## Constraints
 You will have to develop using the main constraints:
 
 - Test-Driven Development
 - Pair Programming
 
-### Xtrem iteration
-We will work in small iterations (20')
+### Xtrem Iteration
+We will work in small iterations
 
 ![Xtrem iteration](img/xtrem-tdd.png)
 
-- Share the constraint - **1'**
-- Implement it in your code - **24'**
-- Debriefing - **5'**
+- Share the constraint
+- Implement it in your code
+- Debriefing
 	- How did you apply it?
 	- What did you learn?
 	- How could it be useful in your current code base?
 	- Our solution
 		- Keep your code or switch to our solution branch to move on
 
-### Workshop constraints
-In this workshop, we will make those iterations:
+### Iterations
+In this workshop, we will make those iterations in this order:
 
-- Let's mutate the production code
-	- Run code coverage
-   - [Mutation Testing](https://xtrem-tdd.netlify.app/Flavours/mutation-testing)
-- Implement missing features using TDD
-   - [Generate Code From Usage](https://xtrem-tdd.netlify.app/Flavours/generate-code-from-usage)
-- Stop [Primitive obsession](https://refactoring.guru/fr/smells/primitive-obsession)
-   - [No Primitive Types](https://xtrem-tdd.netlify.app/Flavours/no-primitive-types)
-- [No for loops](https://xtrem-tdd.netlify.app/Flavours/no-for-loops)
-- No more state mutation
-   - [Only immutable types](https://xtrem-tdd.netlify.app/Flavours/immutable-types)
-- [No exception authorized](https://xtrem-tdd.netlify.app/Flavours/avoid-exceptions)
+1. [Let's Mutate Some Code](facilitation/1.mutation-testing.md)
+2. [Implement Portfolio](facilitation/2.portfolio.md)
+3. [Fight Primitive Obsession](facilitation/3.no-primitive-types.md)
+4. [No For Loops](facilitation/4.no-for-loops.md)
+5. [Use Only Immutable Types](facilitation/5.only-immutable-types.md)
+6. [Avoid Exceptions](facilitation/6.no-exception-authorized.md)
+7. [Use an existing monad](facilitation/7.use-existing-monad.md)
+8. [Property-Based Testing to challenge our Domain Model](facilitation/8.bank-properties.md)
 
 ### Solution
-We have created 1 branch per constraint
+We have created 1 branch per iteration solution
 
 ![Branches](img/branches.png)
 
 Each branch contains:
-- a possible `solution` for the given constraint in `java` and `c#`
+- a possible `solution` for the given constraint in `java`, `c#` and `scala`
 - a `step-by-step` guide to reproduce how we came from previous state to the state in the branch
   - 1 guide per language in `<language>/docs/<#iteration>.<constraint>.md`
