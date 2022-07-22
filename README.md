@@ -42,7 +42,7 @@ We have structured this workshop using the [4C model](https://www.bowperson.com/
 - `Conclusion` :  Learners summarize what they have learned
 
 ## Workshop
-- [Connection - 10'](docs/connection.md)
-- [Concepts - 15'](docs/concepts.md)
-- [Concrete Practice - 85'](docs/concrete-practice.md)
-- [Conclusion - 10'](docs/conclusion.md)
+- [Connection](docs/connection.md)
+- [Concepts](docs/concepts.md)
+- [Concrete Practice](docs/concrete-practice.md)
+- [Conclusion](docs/conclusion.md)
