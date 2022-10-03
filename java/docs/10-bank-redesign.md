@@ -281,7 +281,7 @@ public void canUpdateAnExchangeRateForAnyCurrencyDifferentFromThePivot(
 }
 ```
 
-Make it fails by introducing a manual mutant to improve your confidence into this property.
+Make it fail by introducing a manual mutant to improve your confidence into this property.
 
 #### Convert a Money
 ![Convert a Money](img/bank-redesign-convert.png)
@@ -294,7 +294,7 @@ createBankWithPivotCurrency(pivotCurrency)
     .convert(money, currency) should return error(money.currency->currency)
 ```
 
-:red_circle: add this failing test
+:red_circle: Add this failing test
 ```java
 @Property
 public void canNotConvertToAnUnknownCurrencies(
