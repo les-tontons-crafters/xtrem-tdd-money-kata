@@ -22,7 +22,7 @@ public class NewBankProperties {
             Currency pivotCurrency,
             @InRange(min = MINIMUM_RATE, max = MAXIMUM_RATE) double validRate) {
         assertThat(withPivotCurrency(pivotCurrency)
-                .add(createExchangeRate(validRate, pivotCurrency)))
+                .add(rateFor(validRate, pivotCurrency)))
                 .containsOnLeft(new Error("Can not add an exchange rate for the pivot currency"));
     }
 
@@ -34,7 +34,7 @@ public class NewBankProperties {
         notPivotCurrency(pivotCurrency, otherCurrency);
 
         assertThat(withPivotCurrency(pivotCurrency)
-                .add(createExchangeRate(validRate, otherCurrency)))
+                .add(rateFor(validRate, otherCurrency)))
                 .isRight();
     }
 
@@ -45,8 +45,8 @@ public class NewBankProperties {
             @InRange(min = MINIMUM_RATE, max = MAXIMUM_RATE) double validRate) {
         notPivotCurrency(pivotCurrency, otherCurrency);
 
-        var exchangeRate = createExchangeRate(validRate, otherCurrency);
-        var updatedExchangeRate = createExchangeRate(validRate + 0.1, otherCurrency);
+        var exchangeRate = rateFor(validRate, otherCurrency);
+        var updatedExchangeRate = rateFor(validRate + 0.1, otherCurrency);
 
         assertThat(withPivotCurrency(pivotCurrency)
                 .add(exchangeRate)
@@ -82,7 +82,7 @@ public class NewBankProperties {
         notPivotCurrency(pivotCurrency, money.currency());
 
         assertThat(withPivotCurrency(pivotCurrency)
-                .add(createExchangeRate(validRate, money.currency()))
+                .add(rateFor(validRate, money.currency()))
                 .flatMap(newBank -> newBank.convert(money, money.currency())))
                 .containsOnRight(money);
     }

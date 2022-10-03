@@ -602,6 +602,209 @@ public class NewBank {
 }
 ```
 
+Let's add the last example: convert through pivot currency.
+```gherkin
+Given a Bank with Euro as Pivot Currency and an exchange rate of 1.2 defined for Dollar and an exchange rate of 1344 defined for Korean Wons
+When I convert 10 Dollars to Korean Wons
+Then it should return 11 200 Korean Wons
+```
+
+:red_circle: Add our new example in our tests:
+```java
+@Test
+@DisplayName("10 USD -> KRW = 11 200 KRW")
+void convertThroughPivotCurrency() {
+    assertThat(bank.add(rateFor(1.2, USD))
+            .flatMap(b -> b.add(rateFor(1344, KRW)))
+            .flatMap(newBank -> newBank.convert(dollars(10), KRW)))
+            .containsOnRight(koreanWons(11200));
+}
+```
+
+:green_circle: We need to handle how to convert through pivot currency between 2 currencies.
+In terms of design one easy way to handle it is to register multiplier and divider exchange rates when adding an exchange rate.
+We need to check as well at the conversion time if we can make the conversion:
+- To the same currency
+- From pivot to a known currency (direct conversion)
+- From a known currency to another know one (conversion through pivot currency)
+
+```java
+public class NewBank {
+    private final Currency pivotCurrency;
+    private final Map<String, ExchangeRate> exchangeRates;
+
+    private NewBank(Currency pivotCurrency, Map<String, ExchangeRate> exchangeRates) {
+        this.pivotCurrency = pivotCurrency;
+        this.exchangeRates = exchangeRates;
+    }
+
+    private NewBank(Currency pivotCurrency) {
+        this(pivotCurrency, empty());
+    }
+
+    public static NewBank withPivotCurrency(Currency pivotCurrency) {
+        return new NewBank(pivotCurrency);
+    }
+
+    public Either<Error, NewBank> add(ExchangeRate exchangeRate) {
+        return !isSameCurrency(exchangeRate.getCurrency(), pivotCurrency)
+                ? Right(addMultiplierAndDividerExchangeRate(exchangeRate))
+                : Left(new Error("Can not add an exchange rate for the pivot currency"));
+    }
+
+    private boolean isSameCurrency(Currency exchangeRate, Currency pivotCurrency) {
+        return exchangeRate == pivotCurrency;
+    }
+
+    private NewBank addMultiplierAndDividerExchangeRate(ExchangeRate exchangeRate) {
+        return new NewBank(
+                pivotCurrency,
+                exchangeRates.put(keyFor(pivotCurrency, exchangeRate.getCurrency()), exchangeRate)
+                        .put(keyFor(exchangeRate.getCurrency(), pivotCurrency), dividerRate(exchangeRate))
+        );
+    }
+
+    private ExchangeRate dividerRate(ExchangeRate exchangeRate) {
+        return new ExchangeRate(1 / exchangeRate.getRate(), exchangeRate.getCurrency());
+    }
+
+    private static String keyFor(Currency from, Currency to) {
+        return from + "->" + to;
+    }
+
+    public Either<Error, Money> convert(Money money, Currency to) {
+        return canConvert(money, to)
+                ? Right(convertSafely(money, to))
+                : Left(new Error("No exchange rate defined for " + keyFor(money.currency(), to)));
+    }
+
+    private boolean canConvert(Money money, Currency to) {
+        return isSameCurrency(money.currency(), to) ||
+                canConvertDirectly(money, to) ||
+                canConvertThroughPivotCurrency(money, to);
+    }
+
+    private boolean canConvertDirectly(Money money, Currency to) {
+        return exchangeRates.containsKey(keyFor(money.currency(), to));
+    }
+
+    private boolean canConvertThroughPivotCurrency(Money money, Currency to) {
+        return exchangeRates.containsKey(keyFor(pivotCurrency, money.currency()))
+                && exchangeRates.containsKey(keyFor(pivotCurrency, to));
+    }
+
+    private Money convertSafely(Money money, Currency to) {
+        if (isSameCurrency(money.currency(), to))
+            return money;
+
+        return canConvertDirectly(money, to)
+                ? convertDirectly(money, to)
+                : convertThroughPivotCurrency(money, to);
+    }
+
+    private Money convertThroughPivotCurrency(Money money, Currency to) {
+        var convertToPivot = convertDirectly(money, pivotCurrency);
+        var convertToToCurrency = convertDirectly(convertToPivot, to);
+
+        return convertToToCurrency;
+    }
+
+    private Money convertDirectly(Money money, Currency to) {
+        var exchangeRate = exchangeRates.getOrElse(keyFor(money.currency(), to), new ExchangeRate(0, to));
+        return new Money(money.amount() * exchangeRate.getRate(), to);
+    }
+}
+```
+
+:large_blue_circle: Simplify the code and its readability.
+```java
+public class NewBank {
+    private final Currency pivotCurrency;
+    private final Map<String, ExchangeRate> exchangeRates;
+
+    private NewBank(Currency pivotCurrency, Map<String, ExchangeRate> exchangeRates) {
+        this.pivotCurrency = pivotCurrency;
+        this.exchangeRates = exchangeRates;
+    }
+
+    private NewBank(Currency pivotCurrency) {
+        this(pivotCurrency, empty());
+    }
+
+    public static NewBank withPivotCurrency(Currency pivotCurrency) {
+        return new NewBank(pivotCurrency);
+    }
+
+    public Either<Error, NewBank> add(ExchangeRate exchangeRate) {
+        return !isSameCurrency(exchangeRate.getCurrency(), pivotCurrency)
+                ? Right(addMultiplierAndDividerExchangeRate(exchangeRate))
+                : Left(new Error("Can not add an exchange rate for the pivot currency"));
+    }
+
+    private boolean isSameCurrency(Currency exchangeRate, Currency pivotCurrency) {
+        return exchangeRate == pivotCurrency;
+    }
+
+    private NewBank addMultiplierAndDividerExchangeRate(ExchangeRate exchangeRate) {
+        return new NewBank(
+                pivotCurrency,
+                exchangeRates.put(keyFor(pivotCurrency, exchangeRate.getCurrency()), exchangeRate)
+                        .put(keyFor(exchangeRate.getCurrency(), pivotCurrency), dividerRate(exchangeRate))
+        );
+    }
+
+    private ExchangeRate dividerRate(ExchangeRate exchangeRate) {
+        return new ExchangeRate(1 / exchangeRate.getRate(), exchangeRate.getCurrency());
+    }
+
+    private static String keyFor(Currency from, Currency to) {
+        return from + "->" + to;
+    }
+
+    public Either<Error, Money> convert(Money money, Currency to) {
+        return canConvert(money, to)
+                ? Right(convertSafely(money, to))
+                : Left(new Error("No exchange rate defined for " + keyFor(money.currency(), to)));
+    }
+
+    private boolean canConvert(Money money, Currency to) {
+        return isSameCurrency(money.currency(), to) ||
+                canConvertDirectly(money, to) ||
+                canConvertThroughPivotCurrency(money, to);
+    }
+
+    private boolean canConvertDirectly(Money money, Currency to) {
+        return exchangeRates.containsKey(keyFor(money.currency(), to));
+    }
+
+    private boolean canConvertThroughPivotCurrency(Money money, Currency to) {
+        return exchangeRates.containsKey(keyFor(pivotCurrency, money.currency()))
+                && exchangeRates.containsKey(keyFor(pivotCurrency, to));
+    }
+
+    private Money convertSafely(Money money, Currency to) {
+        if (isSameCurrency(money.currency(), to))
+            return money;
+
+        return canConvertDirectly(money, to)
+                ? convertDirectly(money, to)
+                : convertThroughPivotCurrency(money, to);
+    }
+
+    private Money convertDirectly(Money money, Currency to) {
+        var exchangeRate = exchangeRates.getOrElse(keyFor(money.currency(), to), new ExchangeRate(0, to));
+        return new Money(money.amount() * exchangeRate.getRate(), to);
+    }
+
+    private Money convertThroughPivotCurrency(Money money, Currency to) {
+        return convertDirectly(convertDirectly(money, pivotCurrency), to);
+    }
+}
+```
+
+Are we confident enough with those `properties` and `unit tests`?
+
+We may add some other examples to increase our confidence.
 We can use `parameterized tests` to make it easiest to use different examples for the same behavior. 
 ```xml
 <dependency>
@@ -612,18 +815,8 @@ We can use `parameterized tests` to make it easiest to use different examples fo
 </dependency>
 ```
 
-- From examples: edge cases
-- ConvertThroughPivotCurrency
-- PBT removed after we learned a lot ?
-   - Check which property makes still sense
-- [Parse don't validate](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/)
-- Continuation functions instead of procedural code
-- Test improvement 
-    - Parameterized Tests
-    - Higher order function
-    - Organize tests: failure vs success -> Nested classes
-- Public contract of the bank:
-    - add(ExchangeRate rate) -> ExchangeRate Currency + double
-    - convert(Money money, Currency currency) -> Either<Error, Bank>
-- Use Error types instead of String when using Either
-- Call the branch -> 10-bank-redesign
+TODO : 
+- finish Bank tests
+- strangler on Portfolio -> evaluate
+- remove old Bank implementation
+- use Error instead of Strings [Bonus]

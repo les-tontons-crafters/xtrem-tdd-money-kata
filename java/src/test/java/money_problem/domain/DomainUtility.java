@@ -25,7 +25,7 @@ public class DomainUtility {
                 .foldLeft(new Portfolio(), Portfolio::add);
     }
 
-    public static ExchangeRate createExchangeRate(double validAmount, Currency currency) {
-        return from(validAmount, currency).get();
+    public static ExchangeRate rateFor(double rate, Currency currency) {
+        return from(rate, currency).get();
     }
 }
