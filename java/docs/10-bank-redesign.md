@@ -161,7 +161,7 @@ createBankWithPivotCurrency(pivotCurrency)
     .add(new ExchangeRate(positiveDouble, currency)) should return success
 ```
 
-:red_circle: Let's triangulate the success implementation now
+:red_circle: Let's triangulate the success `add` implementation now
 ```java
 @Property
 public void canAddAnExchangeRateForAnyCurrencyDifferentFromThePivot(
@@ -253,6 +253,36 @@ public class NewBank {
 }
 ```
 
+update an exchange rate for a Currency:
+```text
+for all (pivotCurrency, currency, positiveDouble)
+such that currency != pivotCurrency
+createBankWithPivotCurrency(pivotCurrency)
+    .add(new ExchangeRate(positiveDouble, currency))
+    .add(new ExchangeRate(positiveDouble + 0.1, currency)) should return success
+```
+
+:green_circle: This behavior comes for free with our current design.
+```java
+@Property
+public void canUpdateAnExchangeRateForAnyCurrencyDifferentFromThePivot(
+        Currency pivotCurrency,
+        Currency otherCurrency,
+        @InRange(min = MINIMUM_RATE, max = MAXIMUM_RATE) double validRate) {
+    notPivotCurrency(pivotCurrency, otherCurrency);
+
+    var exchangeRate = createExchangeRate(otherCurrency, validRate);
+    var updatedExchangeRate = createExchangeRate(otherCurrency, validRate + 0.1);
+
+    assertThat(withPivotCurrency(pivotCurrency)
+            .add(exchangeRate)
+            .flatMap(newBank -> newBank.add(updatedExchangeRate)))
+            .isRight();
+}
+```
+
+Make it fails by introducing a manual mutant to improve your confidence into this property.
+
 #### Convert a Money
 ![Convert a Money](img/bank-redesign-convert.png)
 
@@ -303,8 +333,24 @@ public class NewBank {
 ```
 
 :green_circle: Make it pass.
+```java
+public class NewBank {
+    ...
 
+    public Either<Error, Money> convert(Money money, Currency to) {
+        return Left(new Error("No exchange rate defined for " + money.currency() + "->" + to));
+    }
+}
+```
 
+:large_blue_circle: Any refactoring?
+
+Let's work on another property: convert any amount from pivot to pivot returns the original money
+```text
+for all (money)
+createBankWithPivotCurrency(money.currency)
+    .convert(money, money.currency) should return money
+```
 
 - From examples: edge cases
 - ConvertThroughPivotCurrency

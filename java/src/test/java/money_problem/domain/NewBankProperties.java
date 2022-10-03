@@ -39,16 +39,41 @@ public class NewBankProperties {
     }
 
     @Property
-    public void canNotConvertToAnUnknownCurrencies(
+    public void canUpdateAnExchangeRateForAnyCurrencyDifferentFromThePivot(
+            Currency pivotCurrency,
+            Currency otherCurrency,
+            @InRange(min = MINIMUM_RATE, max = MAXIMUM_RATE) double validRate) {
+        notPivotCurrency(pivotCurrency, otherCurrency);
+
+        var exchangeRate = createExchangeRate(otherCurrency, validRate);
+        var updatedExchangeRate = createExchangeRate(otherCurrency, validRate + 0.1);
+
+        assertThat(withPivotCurrency(pivotCurrency)
+                .add(exchangeRate)
+                .flatMap(newBank -> newBank.add(updatedExchangeRate)))
+                .isRight();
+    }
+
+    @Property
+    public void canNotConvertToAnUnknownCurrency(
             Currency pivotCurrency,
             Currency otherCurrency,
             @From(MoneyGenerator.class) Money money) {
-        notPivotCurrency(pivotCurrency, otherCurrency);
+        assumeTrue(money.currency() != otherCurrency);
 
         assertThat(withPivotCurrency(pivotCurrency)
                 .convert(money, otherCurrency))
                 .containsOnLeft(new Error("No exchange rate defined for " + money.currency() + "->" + otherCurrency));
     }
+
+    @Property
+    public void convertAnyMoneyInPivotCurrencyToPivotCurrencyReturnMoneyItself(
+            @From(MoneyGenerator.class) Money money) {
+        assertThat(withPivotCurrency(money.currency())
+                .convert(money, money.currency()))
+                .containsOnRight(money);
+    }
+
 
     private ExchangeRate createExchangeRate(Currency pivotCurrency, double validAmount) {
         return from(validAmount, pivotCurrency).get();
