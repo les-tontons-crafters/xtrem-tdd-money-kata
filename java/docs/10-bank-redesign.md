@@ -24,6 +24,97 @@ To implement those, we can simply well encapsulate our class by making impossibl
 We have not really test cases here, but it gives us ideas for preserving the integrity of our system.
 
 #### Add an exchange rate
+![Add an exchange rate](img/bank-redesign-add-echange-rate.png)
+
+We can use `Property-Based Testing` here to check those rules
+
+Can not add an exchange rate for the pivot currency of the `Bank`:
+```text
+for all (currency, positiveDouble)
+createBankWithPivotCurrency(currency)
+    .add(new ExchangeRate(positiveDouble, currency)) should return an error("Can not add an exchange rate for the pivot currency")
+```
+
+Can not use a negative double or 0 as exchange rate: 
+```text
+for all (pivotCurrency, currency, negativeOr0Double)
+such that currency != pivotCurrency
+createBankWithPivotCurrency(pivotCurrency)
+    .add(new ExchangeRate(negativeOr0Double, currency)) should return error("Exchange rate should be greater than 0")
+```
+
+Add an exchange rate for a Currency:
+```text
+for all (pivotCurrency, currency, positiveDouble)
+such that currency != pivotCurrency
+createBankWithPivotCurrency(pivotCurrency)
+    .add(new ExchangeRate(positiveDouble, currency)) should return success
+```
+
+Let's start to work on those properties first.
+:red_circle: As usual, we start by a failing test / property on a new bank implementation
+
+```java
+@RunWith(JUnitQuickcheck.class)
+public class NewBankProperties {
+    @Property
+    public void canNotAddAnExchangeRateForThePivotCurrencyOfTheBank(Currency pivotCurrency, @InRange(min = "0.000001", max = "100_000") double validAmount) {
+        assertThat(NewBank.withPivotCurrency(pivotCurrency)
+                .add(new ExchangeRate(validAmount, pivotCurrency))
+                .containsOnLeft(new money_problem.domain.Error("Can not add an exchange rate for the pivot currency"));
+    }
+}
+```
+
+We have some code to generate from here:
+![canNotAddAnExchangeRateForThePivotCurrencyOfTheBank](img/bank-redesign-canNotAddAnExchangeRateForThePivotCurrencyOfTheBank.png)
+
+```java
+public class NewBank {
+    public static NewBank withPivotCurrency(Currency pivotCurrency) {
+        return null;
+    }
+
+    public Either<Error, NewBank> add(ExchangeRate exchangeRate) {
+        return null;
+    }
+}
+
+public record Error(String message) {
+}
+
+public record ExchangeRate(double amount, Currency currency) {
+}
+```
+
+:green_circle: We can then fake the expected behavior to make it green.
+```java
+public class NewBank {
+    public static NewBank withPivotCurrency(Currency pivotCurrency) {
+        return new NewBank();
+    }
+
+    public Either<Error, NewBank> add(ExchangeRate exchangeRate) {
+        return Left(new Error("Can not add an exchange rate for the pivot currency"));
+    }
+}
+```
+
+:large_blue_circle: Any improvement?
+
+:red_circle: Let's add a second property
+
+
+#### Convert a Money
+![Convert a Money](img/bank-redesign-convert.png)
+
+Convert from pivot to pivot currency:
+```text
+for all (pivotCurrency, amount)
+createBankWithPivotCurrency(pivotCurrency)
+    .convert(amount, pivotCurrency) should return amount
+```
+
 
 :red_circle: add a failing test on a new bank implementation
 
