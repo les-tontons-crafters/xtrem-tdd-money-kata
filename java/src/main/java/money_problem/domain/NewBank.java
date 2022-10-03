@@ -21,4 +21,8 @@ public class NewBank {
                 ? Right(new NewBank(pivotCurrency))
                 : Left(new Error("Can not add an exchange rate for the pivot currency"));
     }
+
+    public Either<Error, NewBank> convert(Money money, Currency to) {
+        return Left(new Error("No exchange rate defined for " + money.currency() + "->" + to));
+    }
 }

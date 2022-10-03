@@ -35,23 +35,7 @@ createBankWithPivotCurrency(currency)
     .add(new ExchangeRate(positiveDouble, currency)) should return an error("Can not add an exchange rate for the pivot currency")
 ```
 
-Can not use a negative double or 0 as exchange rate: 
-```text
-for all (pivotCurrency, currency, negativeOr0Double)
-such that currency != pivotCurrency
-createBankWithPivotCurrency(pivotCurrency)
-    .add(new ExchangeRate(negativeOr0Double, currency)) should return error("Exchange rate should be greater than 0")
-```
-
-Add an exchange rate for a Currency:
-```text
-for all (pivotCurrency, currency, positiveDouble)
-such that currency != pivotCurrency
-createBankWithPivotCurrency(pivotCurrency)
-    .add(new ExchangeRate(positiveDouble, currency)) should return success
-```
-
-Let's start to work on those properties first.
+Let's start to work on this property first.
 
 :red_circle: As usual, we start by a failing test / property on a new bank implementation
 
@@ -103,6 +87,14 @@ public class NewBank {
 ```
 
 :large_blue_circle: Any improvement?
+
+Can not use a negative double or 0 as exchange rate: 
+```text
+for all (pivotCurrency, currency, negativeOr0Double)
+such that currency != pivotCurrency
+createBankWithPivotCurrency(pivotCurrency)
+    .add(new ExchangeRate(negativeOr0Double, currency)) should return error("Exchange rate should be greater than 0")
+```
 
 :red_circle: Let's add a second property regarding the fact an `Exchange rate` should never be negative or equal to 0.
 It should be a responsibility of the `EchangeRate` data structure so let's write this property aside from the ones of the `Bank`:
@@ -158,6 +150,15 @@ public class NewBankProperties {
         return from(validRate, pivotCurrency).get();
     }
 }
+```
+
+
+Add an exchange rate for a Currency:
+```text
+for all (pivotCurrency, currency, positiveDouble)
+such that currency != pivotCurrency
+createBankWithPivotCurrency(pivotCurrency)
+    .add(new ExchangeRate(positiveDouble, currency)) should return success
 ```
 
 :red_circle: Let's triangulate the success implementation now
@@ -255,15 +256,53 @@ public class NewBank {
 #### Convert a Money
 ![Convert a Money](img/bank-redesign-convert.png)
 
-Convert from pivot to pivot currency:
+Convert in unknown currencies:
 ```text
-for all (pivotCurrency, amount)
+for all (pivotCurrency, currency, money)
+such that currency != pivotCurrency
 createBankWithPivotCurrency(pivotCurrency)
-    .convert(amount, pivotCurrency) should return amount
+    .convert(money, currency) should return error(money.currency->currency)
 ```
 
+:red_circle: add this failing test
+```java
+@Property
+public void canNotConvertToAnUnknownCurrencies(
+        Currency pivotCurrency,
+        Currency otherCurrency,
+        @From(MoneyGenerator.class) Money money) {
+    notPivotCurrency(pivotCurrency, otherCurrency);
 
-:red_circle: add a failing test on a new bank implementation
+    assertThat(withPivotCurrency(pivotCurrency)
+            .convert(money, otherCurrency))
+            .containsOnLeft(new Error("No exchange rate defined for " + money.currency() + "->" + otherCurrency));
+}
+
+public class NewBank {
+    private final Currency pivotCurrency;
+
+    private NewBank(Currency pivotCurrency) {
+        this.pivotCurrency = pivotCurrency;
+    }
+
+    public static NewBank withPivotCurrency(Currency pivotCurrency) {
+        return new NewBank(pivotCurrency);
+    }
+
+    public Either<Error, NewBank> add(ExchangeRate exchangeRate) {
+        return exchangeRate.getCurrency() != pivotCurrency
+                ? Right(new NewBank(pivotCurrency))
+                : Left(new Error("Can not add an exchange rate for the pivot currency"));
+    }
+
+    // To compile
+    public Either<Error, NewBank> convert(Money money, Currency to) {
+        return null;
+    }
+}
+```
+
+:green_circle: Make it pass.
 
 
 
