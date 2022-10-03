@@ -66,8 +66,9 @@ public class NewBankProperties {
 }
 ```
 
-We have some code to generate from here:
+We have some code to generate from here, you remember we wanted to fight primitive obsession so decided to represent the `ExchangeRate` as a business concept.
 ![canNotAddAnExchangeRateForThePivotCurrencyOfTheBank](img/bank-redesign-canNotAddAnExchangeRateForThePivotCurrencyOfTheBank.png)
+
 
 ```java
 public class NewBank {
@@ -102,8 +103,148 @@ public class NewBank {
 
 :large_blue_circle: Any improvement?
 
-:red_circle: Let's add a second property
+:red_circle: Let's add a second property regarding the fact an `Exchange rate` should never be negative or equal to 0.
+It should be a responsibility of the `EchangeRate` data structure so let's write this property aside from the ones of the `Bank`:
+```java
+@RunWith(JUnitQuickcheck.class)
+public class ExchangeRateProperties {
+    @Property
+    public void canNotUseANegativeDoubleOrZeroAsExchangeRate(
+            @InRange(max = "0") double invalidAmount,
+            Currency anyCurrency) {
+        assertThat(ExchangeRate.from(invalidAmount, anyCurrency))
+                .containsOnLeft(new Error("Exchange rate should be greater than 0"));
+    }
+}
+```
 
+:green_circle: Create the method and fake its behavior for now.
+Here to preserve encapsulation and force the usage of the `from` factory method, we choose to use a classic class and not a record.
+
+```java
+public class ExchangeRate {
+    private double rate;
+    private Currency currency;
+
+    private ExchangeRate(double rate, Currency currency) {
+        this.rate = rate;
+        this.currency = currency;
+    }
+
+    public static Either<Error, ExchangeRate> from(double rate, Currency currency) {
+        return Left(new Error("Exchange rate should be greater than 0"));
+    }
+}
+```
+
+:large_blue_circle: Improve our exchange rate instantiation in test
+```java
+@RunWith(JUnitQuickcheck.class)
+public class NewBankProperties {
+    @Property
+    public void canNotAddAnExchangeRateForThePivotCurrencyOfTheBank(Currency pivotCurrency, @InRange(min = "0.000001", max = "100000") double validRate) {
+        assertThat(withPivotCurrency(pivotCurrency)
+                .add(createExchangeRate(pivotCurrency, validRate)))
+                .containsOnLeft(new Error("Can not add an exchange rate for the pivot currency"));
+    }
+
+    private ExchangeRate createExchangeRate(Currency pivotCurrency, double validRate) {
+        return from(validRate, pivotCurrency).get();
+    }
+}
+```
+
+:red_circle: Let's triangulate the success implementation now
+```java
+@Property
+public void canAddAnExchangeRateForAnyCurrencyDifferentFromThePivot(
+        Currency pivotCurrency,
+        Currency otherCurrency,
+        @InRange(min = MINIMUM_RATE, max = MAXIMUM_RATE) double validRate) {
+    assumeTrue(pivotCurrency != otherCurrency);
+
+    assertThat(withPivotCurrency(pivotCurrency)
+            .add(createExchangeRate(otherCurrency, validRate)))
+            .isRight();
+}
+```
+
+:green_circle: Improve the `ExchangeRate` design to move on.
+```java
+public class ExchangeRate {
+    private double rate;
+    private Currency currency;
+
+    private ExchangeRate(double rate, Currency currency) {
+        this.rate = rate;
+        this.currency = currency;
+    }
+
+    private static boolean isPositive(double rate) {
+        return rate > 0;
+    }
+
+    public static Either<Error, ExchangeRate> from(double rate, Currency currency) {
+        return isPositive(rate)
+                ? Right(new ExchangeRate(rate, currency))
+                : Left(new Error("Exchange rate should be greater than 0"));
+    }
+}
+```
+
+We then need to work at the `Bank` level:
+```java
+public class NewBank {
+    private Currency pivotCurrency;
+
+    private NewBank(Currency pivotCurrency) {
+        this.pivotCurrency = pivotCurrency;
+    }
+
+    public static NewBank withPivotCurrency(Currency pivotCurrency) {
+        return new NewBank(pivotCurrency);
+    }
+
+    public Either<Error, NewBank> add(ExchangeRate exchangeRate) {
+        if (exchangeRate.getCurrency() == pivotCurrency) {
+            return Left(new Error("Can not add an exchange rate for the pivot currency"));
+        }
+        return Right(new NewBank(pivotCurrency));
+    }
+}
+
+And expose the currency of the ExchangeRate
+
+public class ExchangeRate {
+    ...
+    public Currency getCurrency() {
+        return currency;
+    }
+    ...
+}
+```
+
+:large_blue_circle: We can improve our `Bank` implementation:
+
+```java
+public class NewBank {
+    private final Currency pivotCurrency;
+
+    private NewBank(Currency pivotCurrency) {
+        this.pivotCurrency = pivotCurrency;
+    }
+
+    public static NewBank withPivotCurrency(Currency pivotCurrency) {
+        return new NewBank(pivotCurrency);
+    }
+
+    public Either<Error, NewBank> add(ExchangeRate exchangeRate) {
+        return exchangeRate.getCurrency() != pivotCurrency
+                ? Right(new NewBank(pivotCurrency))
+                : Left(new Error("Can not add an exchange rate for the pivot currency"));
+    }
+}
+```
 
 #### Convert a Money
 ![Convert a Money](img/bank-redesign-convert.png)
