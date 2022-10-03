@@ -52,6 +52,7 @@ createBankWithPivotCurrency(pivotCurrency)
 ```
 
 Let's start to work on those properties first.
+
 :red_circle: As usual, we start by a failing test / property on a new bank implementation
 
 ```java
@@ -120,6 +121,11 @@ public class ExchangeRateProperties {
 
 :green_circle: Create the method and fake its behavior for now.
 Here to preserve encapsulation and force the usage of the `from` factory method, we choose to use a classic class and not a record.
+
+You can see the `from` method as a parsing one. Here we apply a principle called [`parse don't validate`](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/). 
+> Once an object is instantiated, we know for sure that it is valid.
+
+If you use only primitive types, this property is hard to achieve and you will have to make a lot of validation in different places inside your system. 
 
 ```java
 public class ExchangeRate {
