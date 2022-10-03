@@ -352,6 +352,47 @@ createBankWithPivotCurrency(money.currency)
     .convert(money, money.currency) should return money
 ```
 
+:red_circle: Let's describe it with `quickcheck`
+```java
+@Property
+public void convertAnyMoneyInPivotCurrencyToPivotCurrencyReturnMoneyItself(
+        @From(MoneyGenerator.class) Money money) {
+    assertThat(withPivotCurrency(money.currency())
+            .convert(money, money.currency()))
+            .containsOnRight(money);
+}
+```
+
+:green_circle: Improve the `Bank` implementation:
+```java
+public class NewBank {
+    ...
+
+    public Either<Error, Money> convert(Money money, Currency to) {
+        if (money.currency() == to && to == pivotCurrency) {
+            return Right(money);
+        }
+        return Left(new Error("No exchange rate defined for " + money.currency() + "->" + to));
+    }
+}
+```
+
+:large_blue_circle: Simplify conditions to make it clear what's going on:
+```java
+public class NewBank {
+    ...
+    public Either<Error, Money> convert(Money money, Currency to) {
+        return convertFromAndToPivotCurrency(money, to)
+                ? Right(money)
+                : Left(new Error("No exchange rate defined for " + money.currency() + "->" + to));
+    }
+
+    private boolean convertFromAndToPivotCurrency(Money money, Currency to) {
+        return money.currency() == to && to == pivotCurrency;
+    }
+}
+```
+
 - From examples: edge cases
 - ConvertThroughPivotCurrency
 - PBT removed after we learned a lot ?

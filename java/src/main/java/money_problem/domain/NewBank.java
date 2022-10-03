@@ -23,9 +23,12 @@ public class NewBank {
     }
 
     public Either<Error, Money> convert(Money money, Currency to) {
-        if (money.currency() == to) {
-            return Right(money);
-        }
-        return Left(new Error("No exchange rate defined for " + money.currency() + "->" + to));
+        return convertFromAndToPivotCurrency(money, to)
+                ? Right(money)
+                : Left(new Error("No exchange rate defined for " + money.currency() + "->" + to));
+    }
+
+    private boolean convertFromAndToPivotCurrency(Money money, Currency to) {
+        return money.currency() == to && to == pivotCurrency;
     }
 }
