@@ -363,7 +363,7 @@ public void convertAnyMoneyInPivotCurrencyToPivotCurrencyReturnMoneyItself(
 }
 ```
 
-:green_circle: Improve the `Bank` implementation:
+:green_circle: Improve the `Bank` implementation
 ```java
 public class NewBank {
     ...
@@ -391,6 +391,225 @@ public class NewBank {
         return money.currency() == to && to == pivotCurrency;
     }
 }
+```
+
+Let's move on with a new rule / examples
+
+```text
+for all (pivotCurrency, currency, validRate, money)
+such that currency != pivotCurrency
+createBankWithPivotCurrency(pivotCurrency)
+    .add(new ExchangeRate(validRate, money.currency))
+    .convert(money, currency) should return money
+```
+
+:red_circle: Let's automate this property
+```java
+@Property
+public void convertAnyMoneyToMoneyCurrencyReturnMoneyItself(
+        Currency pivotCurrency,
+        @From(MoneyGenerator.class) Money money,
+        @InRange(min = MINIMUM_RATE, max = MAXIMUM_RATE) double validRate) {
+    notPivotCurrency(pivotCurrency, money.currency());
+
+    assertThat(withPivotCurrency(pivotCurrency)
+            .add(createExchangeRate(validRate, money.currency()))
+            .flatMap(newBank -> newBank.convert(money, money.currency())))
+            .containsOnRight(money);
+}
+```
+
+:green_circle: Pretty easy to make it pass, we just have to simplify checks in `Bank`
+```java
+public class NewBank {
+    private final Currency pivotCurrency;
+
+    private NewBank(Currency pivotCurrency) {
+        this.pivotCurrency = pivotCurrency;
+    }
+
+    public static NewBank withPivotCurrency(Currency pivotCurrency) {
+        return new NewBank(pivotCurrency);
+    }
+
+    public Either<Error, NewBank> add(ExchangeRate exchangeRate) {
+        return exchangeRate.getCurrency() != pivotCurrency
+                ? Right(new NewBank(pivotCurrency))
+                : Left(new Error("Can not add an exchange rate for the pivot currency"));
+    }
+
+    public Either<Error, Money> convert(Money money, Currency to) {
+        return canConvert(money, to)
+                ? Right(money)
+                : Left(new Error("No exchange rate defined for " + money.currency() + "->" + to));
+    }
+
+    private boolean canConvert(Money money, Currency to) {
+        return money.currency() == to;
+    }
+}
+```
+
+:large_blue_circle: Not that much to refactor right now.
+
+Let's move on another test case: "convert from pivot currency to another known currency".
+Here we would like to assess more than just the behavior but also the values. We can use normal `unit tests` for that.
+
+:red_circle: Convert from pivot to an existing currency
+
+```java
+class NewBankTest {
+    public static final Currency PIVOT_CURRENCY = EUR;
+    private final NewBank bank = NewBank.withPivotCurrency(PIVOT_CURRENCY);
+
+    @Test
+    @DisplayName("10 EUR -> USD = 12 USD")
+    void convertInDollarsWithEURAsPivotCurrency() {
+        assertThat(bank.add(createExchangeRate(1.2, USD))
+                .flatMap(newBank -> newBank.convert(euros(10), USD)))
+                .containsOnRight(dollars(12));
+    }
+}
+```
+
+:green_circle: To make it pass, we need to now handle the exchangeRates inside our implementation
+```java
+public class NewBank {
+    private final Currency pivotCurrency;
+    private final Map<String, ExchangeRate> exchangeRates;
+
+    private NewBank(Currency pivotCurrency, Map<String, ExchangeRate> exchangeRates) {
+        this.pivotCurrency = pivotCurrency;
+        this.exchangeRates = exchangeRates;
+    }
+
+    private NewBank(Currency pivotCurrency) {
+        this(pivotCurrency, empty());
+    }
+
+    public static NewBank withPivotCurrency(Currency pivotCurrency) {
+        return new NewBank(pivotCurrency);
+    }
+
+    public Either<Error, NewBank> add(ExchangeRate exchangeRate) {
+        return !isSameCurrency(exchangeRate.getCurrency(), pivotCurrency)
+                ? Right(addRate(exchangeRate))
+                : Left(new Error("Can not add an exchange rate for the pivot currency"));
+    }
+
+    private boolean isSameCurrency(Currency exchangeRate, Currency pivotCurrency) {
+        return exchangeRate == pivotCurrency;
+    }
+
+    private NewBank addRate(ExchangeRate exchangeRate) {
+        return new NewBank(
+                pivotCurrency,
+                exchangeRates.put(keyFor(pivotCurrency, exchangeRate.getCurrency()), exchangeRate)
+        );
+    }
+
+    private static String keyFor(Currency from, Currency to) {
+        return from + "->" + to;
+    }
+
+    public Either<Error, Money> convert(Money money, Currency to) {
+        return canConvert(money, to)
+                ? Right(convertSafely(money, to))
+                : Left(new Error("No exchange rate defined for " + money.currency() + "->" + to));
+    }
+
+    private boolean canConvert(Money money, Currency to) {
+        return isSameCurrency(money.currency(), to) ||
+                exchangeRates.containsKey(keyFor(money.currency(), to));
+    }
+
+    private Money convertSafely(Money money, Currency to) {
+        if (isSameCurrency(money.currency(), to)) {
+            return money;
+        } else {
+            var exchangeRate = exchangeRates.getOrElse(keyFor(money.currency(), to), new ExchangeRate(0, to));
+            return new Money(money.amount() * exchangeRate.getRate(), to);
+        }
+    }
+}
+```
+
+:large_blue_circle: Make some refactoring to improve readability
+```java
+public class NewBank {
+    private final Currency pivotCurrency;
+    private final Map<String, ExchangeRate> exchangeRates;
+
+    private NewBank(Currency pivotCurrency, Map<String, ExchangeRate> exchangeRates) {
+        this.pivotCurrency = pivotCurrency;
+        this.exchangeRates = exchangeRates;
+    }
+
+    private NewBank(Currency pivotCurrency) {
+        this(pivotCurrency, empty());
+    }
+
+    public static NewBank withPivotCurrency(Currency pivotCurrency) {
+        return new NewBank(pivotCurrency);
+    }
+
+    public Either<Error, NewBank> add(ExchangeRate exchangeRate) {
+        return !isSameCurrency(exchangeRate.getCurrency(), pivotCurrency)
+                ? Right(addRate(exchangeRate))
+                : Left(new Error("Can not add an exchange rate for the pivot currency"));
+    }
+
+    private boolean isSameCurrency(Currency exchangeRate, Currency pivotCurrency) {
+        return exchangeRate == pivotCurrency;
+    }
+
+    private NewBank addRate(ExchangeRate exchangeRate) {
+        return new NewBank(
+                pivotCurrency,
+                exchangeRates.put(keyFor(pivotCurrency, exchangeRate.getCurrency()), exchangeRate)
+        );
+    }
+
+    private static String keyFor(Currency from, Currency to) {
+        return from + "->" + to;
+    }
+
+    public Either<Error, Money> convert(Money money, Currency to) {
+        return canConvert(money, to)
+                ? Right(convertSafely(money, to))
+                : Left(new Error("No exchange rate defined for " + keyFor(money.currency(), to)));
+    }
+
+    private boolean canConvert(Money money, Currency to) {
+        return isSameCurrency(money.currency(), to) ||
+                canConvertDirectly(money, to);
+    }
+
+    private boolean canConvertDirectly(Money money, Currency to) {
+        return exchangeRates.containsKey(keyFor(money.currency(), to));
+    }
+
+    private Money convertSafely(Money money, Currency to) {
+        return isSameCurrency(money.currency(), to)
+                ? money
+                : convertFromPivotCurrency(money, to);
+    }
+
+    private Money convertFromPivotCurrency(Money money, Currency to) {
+        var exchangeRate = exchangeRates.getOrElse(keyFor(money.currency(), to), new ExchangeRate(0, to));
+        return new Money(money.amount() * exchangeRate.getRate(), to);
+    }
+}
+```
+
+We can use `parameterized tests` to make it easiest to use different examples for the same behavior. 
+```xml
+<dependency>
+    <groupId>org.junit.jupiter</groupId>
+    <artifactId>junit-jupiter-params</artifactId>
+    <version>${junit.version}</version>
+    <scope>test</scope>
+</dependency>
 ```
 
 - From examples: edge cases

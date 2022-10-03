@@ -27,4 +27,8 @@ public class ExchangeRate {
     public Currency getCurrency() {
         return currency;
     }
+
+    public double getRate() {
+        return rate;
+    }
 }
