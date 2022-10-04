@@ -81,6 +81,7 @@ In this workshop, we will make those iterations in this order:
 7. [Use an existing monad](facilitation/7.use-existing-monad.md)
 8. [Property-Based Testing to challenge our Domain Model](facilitation/8.bank-properties.md)
 9. [Shared understanding on the Bank with Example Mapping](facilitation/9.bank-example-mapping.md)
+10. [Redesign the Bank](facilitation/10.redesign-bank.md)
 
 ### Solution
 We have created 1 branch per iteration solution
