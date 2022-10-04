@@ -12,8 +12,8 @@ One way to avoid it is to use a technique called [Sprout Technique](https://unde
 
 > Let's use this technique
 
-### Tests list
-Based on the example mapping outcome we can create a test list and think about the design of our `Bank`.
+### Implement the New Bank
+Based on the example mapping outcome we can easily resonate and think about the design of our `Bank`.
 
 #### Define pivot currency
 ![Define Pivot Currency](img/bank-redesign-pivot-currency.png)
