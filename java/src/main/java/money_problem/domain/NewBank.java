@@ -14,7 +14,7 @@ public class NewBank {
     private final Map<String, ExchangeRate> exchangeRates;
 
     private final Map<Function2<Money, Currency, Boolean>, Function2<Money, Currency, Money>> convert = of(
-            (money, to) -> isSameCurrency(money.currency(), to), (Function2<Money, Currency, Money>) (money, to) -> money,
+            (money, to) -> isSameCurrency(money.currency(), to), (money, to) -> money,
             this::canConvertDirectly, this::convertDirectly,
             this::canConvertThroughPivotCurrency, this::convertThroughPivotCurrency
     );
