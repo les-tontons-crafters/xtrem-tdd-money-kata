@@ -1,15 +1,23 @@
 package money_problem.domain;
 
+import io.vavr.Function2;
 import io.vavr.collection.Map;
 import io.vavr.control.Either;
 
 import static io.vavr.API.Left;
 import static io.vavr.API.Right;
 import static io.vavr.collection.HashMap.empty;
+import static io.vavr.collection.LinkedHashMap.of;
 
 public class NewBank {
     private final Currency pivotCurrency;
     private final Map<String, ExchangeRate> exchangeRates;
+
+    private final Map<Function2<Money, Currency, Boolean>, Function2<Money, Currency, Money>> convert = of(
+            (money, to) -> isSameCurrency(money.currency(), to), (Function2<Money, Currency, Money>) (money, to) -> money,
+            this::canConvertDirectly, this::convertDirectly,
+            this::canConvertThroughPivotCurrency, this::convertThroughPivotCurrency
+    );
 
     private NewBank(Currency pivotCurrency, Map<String, ExchangeRate> exchangeRates) {
         this.pivotCurrency = pivotCurrency;
@@ -30,8 +38,8 @@ public class NewBank {
                 : Left(new Error("Can not add an exchange rate for the pivot currency"));
     }
 
-    private boolean isSameCurrency(Currency exchangeRate, Currency pivotCurrency) {
-        return exchangeRate == pivotCurrency;
+    private boolean isSameCurrency(Currency currency, Currency otherCurrency) {
+        return currency == otherCurrency;
     }
 
     private NewBank addMultiplierAndDividerExchangeRate(ExchangeRate exchangeRate) {
@@ -51,15 +59,9 @@ public class NewBank {
     }
 
     public Either<Error, Money> convert(Money money, Currency to) {
-        return canConvert(money, to)
-                ? Right(convertSafely(money, to))
-                : Left(new Error("No exchange rate defined for " + keyFor(money.currency(), to)));
-    }
-
-    private boolean canConvert(Money money, Currency to) {
-        return isSameCurrency(money.currency(), to) ||
-                canConvertDirectly(money, to) ||
-                canConvertThroughPivotCurrency(money, to);
+        return convert.find(canConvert -> canConvert._1.apply(money, to))
+                .map(k -> k._2.apply(money, to))
+                .toEither(new Error("No exchange rate defined for " + keyFor(money.currency(), to)));
     }
 
     private boolean canConvertDirectly(Money money, Currency to) {
@@ -69,15 +71,6 @@ public class NewBank {
     private boolean canConvertThroughPivotCurrency(Money money, Currency to) {
         return exchangeRates.containsKey(keyFor(pivotCurrency, money.currency()))
                 && exchangeRates.containsKey(keyFor(pivotCurrency, to));
-    }
-
-    private Money convertSafely(Money money, Currency to) {
-        if (isSameCurrency(money.currency(), to))
-            return money;
-
-        return canConvertDirectly(money, to)
-                ? convertDirectly(money, to)
-                : convertThroughPivotCurrency(money, to);
     }
 
     private Money convertDirectly(Money money, Currency to) {
