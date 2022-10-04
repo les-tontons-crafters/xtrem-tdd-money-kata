@@ -965,9 +965,281 @@ Now that we have defined our new bank implementation using T.D.D outside from th
 Let's use another `Strangler`
 
 :red_circle: We start by a failing test / a new expectation
+```java
+class PortfolioTest {
+    private Bank bank;
+    private NewBank newBank;
 
+    @BeforeEach
+    void setup() {
+        bank = Bank.withExchangeRate(EUR, USD, 1.2)
+                .addExchangeRate(USD, KRW, 1100);
 
-TODO : 
-- strangler on Portfolio -> evaluate
-- remove old Bank implementation
-- use Error instead of Strings [Bonus]
+        newBank = NewBank.withPivotCurrency(EUR)
+                .add(rateFor(1.2, USD))
+                .flatMap(n -> n.add(rateFor(1344, KRW)))
+                .get();
+    }
+
+    @Test
+    @DisplayName("5 USD + 10 USD = 15 USD")
+    void shouldAddMoneyInTheSameCurrency() {
+        var portfolio = portfolioWith(
+                dollars(5),
+                dollars(10)
+        );
+
+        assertThat(portfolio.evaluate(newBank, USD))
+                .containsOnRight(dollars(15));
+    }
+    ...
+}
+```
+
+Generate the new `evaluate` method:
+```java
+public Either<Error, Money> evaluate(NewBank bank, Currency to) {
+    return null;
+}
+```
+
+:green_circle: We can duplicate internal methods to make it pass.
+Here we don't manipulate the same types, so it is easier to do it that way.
+
+```java
+public final class Portfolio {
+    private final Seq<Money> moneys;
+
+    public Portfolio() {
+        this.moneys = Vector.empty();
+    }
+
+    private Portfolio(Seq<Money> moneys) {
+        this.moneys = moneys;
+    }
+
+    public Portfolio add(Money money) {
+        return new Portfolio(moneys.append(money));
+    }
+
+    public Either<String, Money> evaluate(Bank bank, Currency toCurrency) {
+        var convertedMoneys = convertAllMoneys(bank, toCurrency);
+
+        return this.containsFailureOld(convertedMoneys)
+                ? left(toFailureOld(convertedMoneys))
+                : right(sumConvertedMoneyOld(convertedMoneys, toCurrency));
+    }
+
+    private Seq<Either<String, Money>> convertAllMoneys(Bank bank, Currency toCurrency) {
+        return moneys.map(money -> bank.convert(money, toCurrency));
+    }
+
+    private boolean containsFailureOld(Seq<Either<String, Money>> convertedMoneys) {
+        return convertedMoneys.exists(Either::isLeft);
+    }
+
+    private String toFailureOld(Seq<Either<String, Money>> convertedMoneys) {
+        return convertedMoneys
+                .filter(Either::isLeft)
+                .map(e -> String.format("[%s]", e.getLeft()))
+                .mkString("Missing exchange rate(s): ", ",", "");
+    }
+
+    private Money sumConvertedMoneyOld(Seq<Either<String, Money>> convertedMoneys, Currency toCurrency) {
+        return new Money(convertedMoneys
+                .filter(Either::isRight)
+                .map(e -> e.getOrElse(new Money(0, toCurrency)))
+                .map(Money::amount)
+                .reduce(Double::sum), toCurrency);
+    }
+
+    private Seq<Either<Error, Money>> convertAllMoneys(NewBank bank, Currency toCurrency) {
+        return moneys.map(money -> bank.convert(money, toCurrency));
+    }
+
+    private boolean containsFailure(Seq<Either<Error, Money>> convertedMoneys) {
+        return convertedMoneys.exists(Either::isLeft);
+    }
+
+    private Error toFailure(Seq<Either<Error, Money>> convertedMoneys) {
+        return new Error(convertedMoneys
+                .filter(Either::isLeft)
+                .map(e -> String.format("[%s]", e.getLeft().message()))
+                .mkString("Missing exchange rate(s): ", ",", ""));
+    }
+
+    private Money sumConvertedMoney(Seq<Either<Error, Money>> convertedMoneys, Currency toCurrency) {
+        return new Money(convertedMoneys
+                .filter(Either::isRight)
+                .map(e -> e.getOrElse(new Money(0, toCurrency)))
+                .map(Money::amount)
+                .reduce(Double::sum), toCurrency);
+    }
+
+    public Either<Error, Money> evaluate(NewBank bank, Currency to) {
+        var convertedMoneys = convertAllMoneys(bank, to);
+
+        return containsFailure(convertedMoneys)
+                ? left(toFailure(convertedMoneys))
+                : right(sumConvertedMoney(convertedMoneys, to));
+    }
+}
+```
+
+Continue by calling the new `evaluate` method in each test:
+```java
+    @Test
+    @DisplayName("5 USD + 10 USD = 15 USD")
+    void shouldAddMoneyInTheSameCurrency() {
+        var portfolio = portfolioWith(
+                dollars(5),
+                dollars(10)
+        );
+
+        assertThat(portfolio.evaluate(newBank, USD))
+                .containsOnRight(dollars(15));
+    }
+
+    @Test
+    @DisplayName("5 USD + 10 EUR = 17 USD")
+    void shouldAddMoneyInDollarsAndEuros() {
+        var portfolio = portfolioWith(
+                dollars(5),
+                euros(10)
+        );
+
+        assertThat(portfolio.evaluate(newBank, USD))
+                .containsOnRight(dollars(17));
+    }
+
+    @Test
+    @DisplayName("1 USD + 1100 KRW = 2200 KRW")
+    void shouldAddMoneyInDollarsAndKoreanWons() {
+        var portfolio = portfolioWith(
+                dollars(1),
+                koreanWons(1100)
+        );
+
+        assertThat(portfolio.evaluate(newBank, KRW))
+                .containsOnRight(koreanWons(2200));
+    }
+
+    @Test
+    @DisplayName("5 USD + 10 EUR + 4 EUR = 21.8 USD")
+    void shouldAddMoneyInDollarsAndMultipleAmountInEuros() {
+        var portfolio = portfolioWith(
+                dollars(5),
+                euros(10),
+                euros(4)
+        );
+
+        assertThat(portfolio.evaluate(newBank, USD))
+                .containsOnRight(dollars(21.8));
+    }
+```
+
+:red_circle: We detect a problem with one of the assertion:
+```java
+    @Test
+    @DisplayName("1 USD + 1100 KRW = 2200 KRW")
+    void shouldAddMoneyInDollarsAndKoreanWons() {
+        var portfolio = portfolioWith(
+                dollars(1),
+                koreanWons(1100)
+        );
+
+        assertThat(portfolio.evaluate(newBank, KRW))
+                .containsOnRight(koreanWons(2200));
+    }
+```
+
+:green_circle: The previous `Bank` implementation were not that good and with our new knowledge we can fix the assertion.
+```java
+ @Test
+ @DisplayName("1 USD + 1100 KRW = 2220 KRW")
+ void shouldAddMoneyInDollarsAndKoreanWons() {
+     var portfolio = portfolioWith(
+             dollars(1),
+             koreanWons(1100)
+     );
+
+     assertThat(portfolio.evaluate(newBank, KRW))
+             .containsOnRight(koreanWons(2220));
+ }
+```
+
+:red_circle: Let's work on the last test case.
+This one is more interesting, since we use the concept of `Pivot Currency` this test case is no longer valid...
+To make it valid we need to use an `empty` instance of a `Bank`.
+```java
+@Test
+@DisplayName("Return a failure result in case of missing exchange rates")
+void shouldReturnAFailingResultInCaseOfMissingExchangeRates() {
+    var portfolio = portfolioWith(
+            euros(1),
+            dollars(1),
+            koreanWons(1)
+    );
+
+    assertThat(portfolio.evaluate(newBank, EUR))
+            .containsOnLeft(error("Missing exchange rate(s): [USD->EUR],[KRW->EUR]"));
+}
+```
+
+Let's adapt the test:
+```java
+    @Test
+    @DisplayName("Return a failure result in case of missing exchange rates")
+    void shouldReturnAFailingResultInCaseOfMissingExchangeRates() {
+        var portfolio = portfolioWith(
+                euros(1),
+                dollars(1),
+                koreanWons(1)
+        );
+
+        var emptyBank = withPivotCurrency(EUR);
+
+        assertThat(portfolio.evaluate(emptyBank, EUR))
+                .containsOnLeft(error("Missing exchange rate(s): [USD->EUR],[KRW->EUR]"));
+    }
+```
+
+We detect a mistake in our `Bank` implementation, the errors are structured differently from the previous implementation:
+![Failure in missing rates](img/bank-redesign-missing-rates.png)
+
+:green_circle: Change the `Bank` error instantiation:
+```java
+    public Either<Error, Money> convert(Money money, Currency to) {
+        return convert.find(canConvert -> canConvert._1.apply(money, to))
+                .map(k -> k._2.apply(money, to))
+                .toEither(new Error(keyFor(money.currency(), to)));
+    }
+```
+
+:large_blue_circle: We can now clean our code:
+- Remove the former `evaluate` method and its related ones
+- Clean the `Portfolio` test to remove the `Bank` concept
+
+![Safe delete](img/bank-redesign-safe-delete.png)
+
+- Delete the former `Bank` implementation
+  - Its associated properties and tests
+- Rename `NewBank` to simply `Bank`
+  - Your IDE will rename tests for you 
+
+![Rename Bank](img/bank-redesign-rename.png)
+
+### Reflect
+In this step we have used a lot of concepts discovered in previous steps:
+- `Sprout Technique` to create our `Bank` implementation without impacting existing code
+- `Example mapping` outcome to design our tests and properties
+- `Property-Based Testing` as a driver for T.D.D
+- `Parameterized tests` to assert the behaviours of a pure function
+- `Strangler pattern` to finalize the `Sprout` and remove the former `Bank` implementation
+- `Fight primitive obsession` by:
+  - introducing an object for `Error` make it more clear our method signatures: `Bank` -> `Currency` -> `Either<Error, Money>`
+  - encapsulating rate business rules inside the `ExchangeRate` class
+
+![What a journey](../../docs/img/bank-redesign.png)
+
+What a journey so far...

@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import static money_problem.domain.Bank.withPivotCurrency;
 import static money_problem.domain.Currency.*;
 import static money_problem.domain.DomainUtility.*;
 import static org.assertj.vavr.api.VavrAssertions.assertThat;
@@ -13,8 +14,10 @@ class PortfolioTest {
 
     @BeforeEach
     void setup() {
-        bank = Bank.withExchangeRate(EUR, USD, 1.2)
-                .addExchangeRate(USD, KRW, 1100);
+        bank = withPivotCurrency(EUR)
+                .add(rateFor(1.2, USD))
+                .flatMap(n -> n.add(rateFor(1344, KRW)))
+                .get();
     }
 
     @Test
@@ -42,7 +45,7 @@ class PortfolioTest {
     }
 
     @Test
-    @DisplayName("1 USD + 1100 KRW = 2200 KRW")
+    @DisplayName("1 USD + 1100 KRW = 2220 KRW")
     void shouldAddMoneyInDollarsAndKoreanWons() {
         var portfolio = portfolioWith(
                 dollars(1),
@@ -50,7 +53,7 @@ class PortfolioTest {
         );
 
         assertThat(portfolio.evaluate(bank, KRW))
-                .containsOnRight(koreanWons(2200));
+                .containsOnRight(koreanWons(2220));
     }
 
     @Test
@@ -75,7 +78,9 @@ class PortfolioTest {
                 koreanWons(1)
         );
 
-        assertThat(portfolio.evaluate(bank, EUR))
-                .containsOnLeft("Missing exchange rate(s): [USD->EUR],[KRW->EUR]");
+        var emptyBank = withPivotCurrency(EUR);
+
+        assertThat(portfolio.evaluate(emptyBank, EUR))
+                .containsOnLeft(error("Missing exchange rate(s): [USD->EUR],[KRW->EUR]"));
     }
 }
