@@ -13,7 +13,7 @@ public class Bank {
     private final Currency pivotCurrency;
     private final Map<String, ExchangeRate> exchangeRates;
 
-    private final Map<Function2<Money, Currency, Boolean>, Function2<Money, Currency, Money>> convert = of(
+    private final Map<CanConvert, Convert> convert = of(
             (money, to) -> isSameCurrency(money.currency(), to), (money, to) -> money,
             this::canConvertDirectly, this::convertDirectly,
             this::canConvertThroughPivotCurrency, this::convertThroughPivotCurrency
@@ -81,4 +81,7 @@ public class Bank {
     private Money convertThroughPivotCurrency(Money money, Currency to) {
         return convertDirectly(convertDirectly(money, pivotCurrency), to);
     }
+
+    private interface CanConvert extends Function2<Money, Currency, Boolean>  { }
+    private interface Convert extends Function2<Money, Currency, Money>  { }
 }

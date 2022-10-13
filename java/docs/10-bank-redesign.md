@@ -802,7 +802,8 @@ public class NewBank {
 }
 ```
 
-- Could we simplify `canConvert` and `convert` methods? We may use a function map to simplify this code and reduce its cyclomatic complexity.
+:large_blue_circle: Could we simplify `canConvert` and `convert` methods? 
+> We may use a function map to simplify this code and reduce its cyclomatic complexity.
 
 ```java
 public class NewBank {
@@ -878,6 +879,27 @@ public class NewBank {
         return convertDirectly(convertDirectly(money, pivotCurrency), to);
     }
 } 
+```
+
+:large_blue_circle: Maybe a little hard to read `Map<Function2<Money, Currency, Boolean>, Function2<Money, Currency, Money>>`...
+We can create interfaces to improve readability.
+
+```java
+public class NewBank {
+    private final Currency pivotCurrency;
+    private final Map<String, ExchangeRate> exchangeRates;
+
+    private final Map<CanConvert, Convert> convert = of(
+            (money, to) -> isSameCurrency(money.currency(), to), (money, to) -> money,
+            this::canConvertDirectly, this::convertDirectly,
+            this::canConvertThroughPivotCurrency, this::convertThroughPivotCurrency
+    );
+
+    ...
+    
+    private interface CanConvert extends Function2<Money, Currency, Boolean>  { }
+    private interface Convert extends Function2<Money, Currency, Money>  { }
+}
 ```
 
 ### Parameterized Tests
