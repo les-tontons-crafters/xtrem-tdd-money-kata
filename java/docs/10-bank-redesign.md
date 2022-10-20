@@ -283,6 +283,13 @@ public void canUpdateAnExchangeRateForAnyCurrencyDifferentFromThePivot(
 
 Make it fail by introducing a manual mutant to improve your confidence into this property.
 
+At the moment, the last test on `add` only verify we receive a valid Bank.
+One may point out the test is not testing the real output.
+The problem is we currently don't have a way to observe a side-effect (aka. a rate has been added) as the Bank do not expose rates.
+This will be tested while testing the `convert` method, by increasing the size of our system-under-test.
+
+Remember that you should **not** break encapsulation for the sake of testing. 
+
 #### Convert a Money
 ![Convert a Money](img/bank-redesign-convert.png)
 
