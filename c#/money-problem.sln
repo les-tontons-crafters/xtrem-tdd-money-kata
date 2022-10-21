@@ -41,6 +41,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "img", "img", "{5A27C3EC-2B3
 		docs\img\PropertyBasedFailureSmallNumber.png = docs\img\PropertyBasedFailureSmallNumber.png
 		docs\img\PropertyBasedFailureShrinking.PNG = docs\img\PropertyBasedFailureShrinking.PNG
 		docs\img\PropertyBasedDemistified.png = docs\img\PropertyBasedDemistified.png
+		docs\img\BankRedesignAddExchangeRate.png = docs\img\BankRedesignAddExchangeRate.png
+		docs\img\BankRedesignConvert.png = docs\img\BankRedesignConvert.png
+		docs\img\BankRedesignExample.png = docs\img\BankRedesignExample.png
+		docs\img\BankRedesignMissingRates.png = docs\img\BankRedesignMissingRates.png
+		docs\img\BankRedesignPivotCurrency.png = docs\img\BankRedesignPivotCurrency.png
+		docs\img\BankRedesignRename.png = docs\img\BankRedesignRename.png
+		docs\img\BankRedesignSafeDelete.png = docs\img\BankRedesignSafeDelete.png
 	EndProjectSection
 EndProject
 Global

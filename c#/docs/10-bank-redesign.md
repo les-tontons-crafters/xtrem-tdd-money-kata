@@ -1,34 +1,35 @@
 ## Redesign the Bank
-Based on our new understanding / discoveries from the `example mapping` workshop we can work on the redesign of the `Bank`.
-The examples will serve to drive our implementation.
+Based on our discoveries from the `example mapping` workshop, we can work on redesigning our `Bank`.
+Again, our examples will drive the implementation.
 
-If we increment on the existing `Bank` code, we will have directly huge impact on the whole system.
+One significant impact is modifying the `Bank`at this stage will have a massive impact on the codebase.
 
 ### Sprout Technique
 One way to avoid it is to use a technique called [Sprout Technique](https://understandlegacycode.com/blog/key-points-of-working-effectively-with-legacy-code/#1-the-sprout-technique) from [Michael Feathers](https://wiki.c2.com/?MichaelFeathers) in his book [Working Effectively with Legacy Code](https://www.oreilly.com/library/view/working-effectively-with/0131177052/):
-- Create your code somewhere else (use T.D.D to drive your implementation)
-- Identify where you should call that code from the existing code: the insertion point.
-- Call your code from the Existing or Legacy Code.
+- Create your code somewhere else.
+  - Keep applying Test-Driven Development based on our new use cases.
+- Identify where to call that code from the existing one: the `insertion point`.
+- Call your code from the existing code.
 
-> Let's use this technique
+> Let's try!
 
 ### Implement the New Bank
-Based on the example mapping outcome we can easily resonate and think about the design of our `Bank`.
+We're going to iterate upon the example mapping outcome.
 
 #### Define pivot currency
-![Define Pivot Currency](img/bank-redesign-pivot-currency.png)
+![Define Pivot Currency](img/BankRedesignPivotCurrency.png)
 
-Regarding our business, those rules are really important and should be at the heart of our system.
-To implement those, we can simply well encapsulate our class by making impossible `by design` to change the pivot currency of a living `Bank` instance.
+From the business point of view, those rules are fundamental and should be at the heart of our system.
+To implement those, we can encapsulate our class by making it impossible `by design` to change the pivot currency of an existing `Bank` instance.
 
-We have not really test cases here, but it gives us ideas for preserving the integrity of our system.
+We don't have test cases here, but it gives us ideas for preserving the integrity of our system.
 
 #### Add an exchange rate
-![Add an exchange rate](img/bank-redesign-add-echange-rate.png)
+![Add an exchange rate](img/BankRedesignAddExchangeRate.png)
 
-We can use `Property-Based Testing` here to check those rules
+`Property-Based Testing` is a good candidate to verify these rules..
 
-Can not add an exchange rate for the pivot currency of the `Bank`:
+> Add an exchange rate for the Pivot Currency
 ```text
 for all (currency, positiveDouble)
 createBankWithPivotCurrency(currency)
@@ -37,56 +38,61 @@ createBankWithPivotCurrency(currency)
 
 Let's start to work on this property first.
 
-:red_circle: As usual, we start by a failing test / property on a new bank implementation
+:red_circle: As usual, we start with a failing test/property on a new bank implementation.
 
-```java
-@RunWith(JUnitQuickcheck.class)
-public class NewBankProperties {
-    @Property
-    public void canNotAddAnExchangeRateForThePivotCurrencyOfTheBank(Currency pivotCurrency, @InRange(min = "0.000001", max = "100_000") double validAmount) {
-        assertThat(NewBank.withPivotCurrency(pivotCurrency)
-                .add(new ExchangeRate(validAmount, pivotCurrency))
-                .containsOnLeft(new money_problem.domain.Error("Can not add an exchange rate for the pivot currency"));
+```csharp
+[Property]
+private Property CannotAddExchangeRateForThePivotCurrencyOfTheBank(double rate, Currency currency) =>
+    (NewBank
+        .WithPivotCurrency(currency)
+        .AddExchangeRate(new NewExchangeRate(currency, rate)) 
+      == Either<Error, NewBank>.Left(new Error("Cannot add an exchange rate for the pivot currency.")))
+        .ToProperty();
+```
+
+We have quite some code to generate here.
+As usual, we are going to use our IDE to do so.
+
+Also, we will have to adapt our existing record `ExchangeRate`.
+Indeed, we won't have to provide the source currency anymore because it will always be our pivot currency.
+
+```csharp 
+public class NewBank
+{
+    public static NewBank WithPivotCurrency(Currency currency)
+    {
+        throw new NotImplementedException();
     }
+
+    public Either<Error,NewBank> AddExchangeRate(NewExchangeRate exchangeRate)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public record Error(string Message);
+
+public record NewExchangeRate(Currency To, double Rate);
+```
+
+:green_circle: We can fake the result to pass our test.
+```csharp 
+public static NewBank WithPivotCurrency(Currency currency)
+{
+    return new NewBank();
+}
+
+public Either<Error,NewBank> Add(NewExchangeRate exchangeRate)
+{
+    return Either<Error, NewBank>.Left(new Error("Cannot add an exchange rate for the pivot currency."));
 }
 ```
 
-We have some code to generate from here, you remember we wanted to fight primitive obsession so decided to represent the `ExchangeRate` as a business concept.
-![canNotAddAnExchangeRateForThePivotCurrencyOfTheBank](img/bank-redesign-canNotAddAnExchangeRateForThePivotCurrencyOfTheBank.png)
+:large_blue_circle: Our implementation being trivial, we decide to leave it for now.
 
+> Add an exchange rate for the Pivot Currency
 
-```java
-public class NewBank {
-    public static NewBank withPivotCurrency(Currency pivotCurrency) {
-        return null;
-    }
-
-    public Either<Error, NewBank> add(ExchangeRate exchangeRate) {
-        return null;
-    }
-}
-
-public record Error(String message) {
-}
-
-public record ExchangeRate(double amount, Currency currency) {
-}
-```
-
-:green_circle: We can then fake the expected behavior to make it green.
-```java
-public class NewBank {
-    public static NewBank withPivotCurrency(Currency pivotCurrency) {
-        return new NewBank();
-    }
-
-    public Either<Error, NewBank> add(ExchangeRate exchangeRate) {
-        return Left(new Error("Can not add an exchange rate for the pivot currency"));
-    }
-}
-```
-
-:large_blue_circle: Any improvement?
+:large_blue_circle: We could improve our test suite by introducing new rules to generate valid exchange rates.
 
 Can not use a negative double or 0 as exchange rate: 
 ```text
