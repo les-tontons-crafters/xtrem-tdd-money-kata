@@ -17,23 +17,28 @@ One way to avoid it is to use a technique called [Sprout Technique](https://unde
 We're going to iterate upon the example mapping outcome.
 
 #### Define pivot currency
+
 ![Define Pivot Currency](img/BankRedesignPivotCurrency.png)
 
 From the business point of view, those rules are fundamental and should be at the heart of our system.
-To implement those, we can encapsulate our class by making it impossible `by design` to change the pivot currency of an existing `Bank` instance.
+To implement those, we can encapsulate our class by making it impossible `by design` to change the pivot currency of an
+existing `Bank` instance.
 
 We don't have test cases here, but it gives us ideas for preserving the integrity of our system.
 
+`Property-Based Testing` is a good candidate to verify these rules.
+We will follow the main rules as shown below.
+
 #### Add an exchange rate
+
 ![Add an exchange rate](img/BankRedesignAddExchangeRate.png)
 
-`Property-Based Testing` is a good candidate to verify these rules..
-
 > Add an exchange rate for the Pivot Currency
+
 ```text
-for all (currency, positiveDouble)
-createBankWithPivotCurrency(currency)
-    .add(new ExchangeRate(positiveDouble, currency)) should return an error("Can not add an exchange rate for the pivot currency")
+for all (currency, rate)
+CreateBankWithPivotCurrency(currency)
+    .Add(new ExchangeRate(rate, currency)) should return an error("Can not add an exchange rate for the pivot currency")
 ```
 
 Let's start to work on this property first.
@@ -42,12 +47,14 @@ Let's start to work on this property first.
 
 ```csharp
 [Property]
-private Property CannotAddExchangeRateForThePivotCurrencyOfTheBank(double rate, Currency currency) =>
-    (NewBank
-        .WithPivotCurrency(currency)
-        .AddExchangeRate(new NewExchangeRate(currency, rate)) 
-      == Either<Error, NewBank>.Left(new Error("Cannot add an exchange rate for the pivot currency.")))
-        .ToProperty();
+private Property CannotAddExchangeRateForThePivotCurrencyOfTheBank() =>
+    Prop.ForAll(
+        Arb.From<Currency>(),
+        Arb.From<double>().MapFilter(_ => _, rate => rate > 0),
+        (currency, rate) =>
+            NewBank
+            .WithPivotCurrency(currency)
+            .Add(new NewExchangeRate(currency, rate)) == Either<Error, NewBank>.Left(new Error("Cannot add an exchange rate for the pivot currency.")));
 ```
 
 We have quite some code to generate here.
@@ -56,7 +63,7 @@ As usual, we are going to use our IDE to do so.
 Also, we will have to adapt our existing record `ExchangeRate`.
 Indeed, we won't have to provide the source currency anymore because it will always be our pivot currency.
 
-```csharp 
+```csharp
 public class NewBank
 {
     public static NewBank WithPivotCurrency(Currency currency)
@@ -76,7 +83,8 @@ public record NewExchangeRate(Currency To, double Rate);
 ```
 
 :green_circle: We can fake the result to pass our test.
-```csharp 
+
+```csharp
 public static NewBank WithPivotCurrency(Currency currency)
 {
     return new NewBank();
@@ -88,49 +96,69 @@ public Either<Error,NewBank> Add(NewExchangeRate exchangeRate)
 }
 ```
 
-:large_blue_circle: Our implementation being trivial, we decide to leave it for now.
+:large_blue_circle: Even with our trivial implementation, we can already reduce the noise in our test.
 
-> Add an exchange rate for the Pivot Currency
+```csharp
+[Property]
+private Property CannotAddExchangeRateForThePivotCurrencyOfTheBank() =>
+    Prop.ForAll(
+        Arb.From<Currency>(),
+        GetValidRates(),
+        (currency, rate) =>
+            AddShouldReturnErrorForSameCurrencyAsPivot(currency, rate,
+                "Cannot add an exchange rate for the pivot currency."));
 
-:large_blue_circle: We could improve our test suite by introducing new rules to generate valid exchange rates.
+private static Arbitrary<double> GetValidRates() => Arb.From<double>().MapFilter(_ => _, rate => rate > 0);
 
-Can not use a negative double or 0 as exchange rate: 
+private static bool AddShouldReturnErrorForSameCurrencyAsPivot(Currency currency, double rate, string message) =>
+    NewBank
+        .WithPivotCurrency(currency)
+        .Add(new NewExchangeRate(currency, rate)) == Either<Error, NewBank>.Left(new Error(message));
+```
+
+> Add an invalid rate for a Currency
+
+:red_circle: Let's add a second property regarding an `Exchange rate` that should never be negative or equal to 0.
+
 ```text
 for all (pivotCurrency, currency, negativeOr0Double)
 such that currency != pivotCurrency
-createBankWithPivotCurrency(pivotCurrency)
-    .add(new ExchangeRate(negativeOr0Double, currency)) should return error("Exchange rate should be greater than 0")
+CreateBankWithPivotCurrency(pivotCurrency)
+    .Add(new ExchangeRate(negativeOr0Double, currency)) should return error("Exchange rate should be greater than 0")
 ```
 
-:red_circle: Let's add a second property regarding the fact an `Exchange rate` should never be negative or equal to 0.
-It should be a responsibility of the `EchangeRate` data structure so let's write this property aside from the ones of the `Bank`:
-```java
-@RunWith(JUnitQuickcheck.class)
-public class ExchangeRateProperties {
-    @Property
-    public void canNotUseANegativeDoubleOrZeroAsExchangeRate(
-            @InRange(max = "0") double invalidAmount,
-            Currency anyCurrency) {
-        assertThat(ExchangeRate.from(invalidAmount, anyCurrency))
-                .containsOnLeft(new Error("Exchange rate should be greater than 0"));
-    }
-}
+It should be a responsibility of the `ExchangeRate` data structure so let's write this property aside from the ones of
+the `Bank`.
+
+```csharp
+[Property]
+public Property CannotUseNegativeDoubleOrZeroAsExchangeRate() =>
+    Prop.ForAll(
+        Arb.From<Currency>(),
+        Arb.From<double>().MapFilter(_ => _, rate => rate <= 0),
+        (currency, rate) =>NewExchangeRate.From(currency, rate) ==
+            Either<Error, NewExchangeRate>.Left(new Error("Exchange rate should be greater than 0.")));
 ```
 
-:green_circle: Create the method and fake its behavior for now.
-Here to preserve encapsulation and force the usage of the `from` factory method, we choose to use a classic class and not a record.
+:green_circle: Create the method and fake its behaviour for now.
+We want to ensure that we can create only valid exchange rates.
+Hence we have to force the usage of the `From` factory method.
+We have to change our `ExchangeRate` record to a struct.
 
-You can see the `from` method as a parsing one. Here we apply a principle called [`parse don't validate`](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/). 
-> Once an object is instantiated, we know for sure that it is valid.
+This principle is called [`parse, don't validate`](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/).
 
-If you use only primitive types, this property is hard to achieve and you will have to make a lot of validation in different places inside your system. 
+Once we instantiate an object, **we know for sure that it is valid**.
+It means we will **never** have an invalid `ExchangeRate`.
 
-```java
+If you use only primitive types, this property is hard to achieve, and you will have to make a lot of validation in
+different places inside your system.
+
+```csharp
 public class ExchangeRate {
     private double rate;
     private Currency currency;
 
-    private ExchangeRate(double rate, Currency currency) {
+    public ExchangeRate(double rate, Currency currency) {
         this.rate = rate;
         this.currency = currency;
     }
@@ -141,125 +169,246 @@ public class ExchangeRate {
 }
 ```
 
-:large_blue_circle: Improve our exchange rate instantiation in test
-```java
-@RunWith(JUnitQuickcheck.class)
-public class NewBankProperties {
-    @Property
-    public void canNotAddAnExchangeRateForThePivotCurrencyOfTheBank(Currency pivotCurrency, @InRange(min = "0.000001", max = "100000") double validRate) {
-        assertThat(withPivotCurrency(pivotCurrency)
-                .add(createExchangeRate(pivotCurrency, validRate)))
-                .containsOnLeft(new Error("Can not add an exchange rate for the pivot currency"));
-    }
+The constructor have to stay public for now because it's being used in the Bank properties.
 
-    private ExchangeRate createExchangeRate(Currency pivotCurrency, double validRate) {
-        return from(validRate, pivotCurrency).get();
-    }
-}
+:large_blue_circle: Same as before, we can reduce the noise
+
+```csharp
+[Property]
+public Property CannotUseNegativeDoubleOrZeroAsExchangeRate() =>
+    Prop.ForAll(
+        Arb.From<Currency>(),
+        GetInvalidRates(),
+        (currency, rate) =>
+            ExchangeRateShouldReturnError(currency, rate, "Exchange rate should be greater than 0."));
+
+private static Arbitrary<double> GetInvalidRates() => Arb.From<double>().MapFilter(_ => _, rate => rate <= 0);
+
+private static bool ExchangeRateShouldReturnError(Currency currency, double rate, string message) =>
+    NewExchangeRate.From(currency, rate) ==
+    Either<Error, NewExchangeRate>.Left(new Error(message));
 ```
 
+As mentioned before, we cannot use the factory method in the `NewBankProperties` until we finalize it.
 
-Add an exchange rate for a Currency:
+
+> Add an exchange rate
+
 ```text
 for all (pivotCurrency, currency, positiveDouble)
 such that currency != pivotCurrency
-createBankWithPivotCurrency(pivotCurrency)
-    .add(new ExchangeRate(positiveDouble, currency)) should return success
+CreateBankWithPivotCurrency(pivotCurrency)
+    .Add(new ExchangeRate(positiveDouble, currency)) should return success
 ```
 
-:red_circle: Let's triangulate the success `add` implementation now
-```java
-@Property
-public void canAddAnExchangeRateForAnyCurrencyDifferentFromThePivot(
-        Currency pivotCurrency,
-        Currency otherCurrency,
-        @InRange(min = MINIMUM_RATE, max = MAXIMUM_RATE) double validRate) {
-    assumeTrue(pivotCurrency != otherCurrency);
+:red_circle: Let's write a new test to implement this behaviour.
 
-    assertThat(withPivotCurrency(pivotCurrency)
-            .add(createExchangeRate(otherCurrency, validRate)))
-            .isRight();
-}
+```csharp
+[Property]
+private Property CanAddExchangeRateForDifferentCurrencyThanPivot() =>
+    Prop.ForAll<Currency, Currency, double>(
+        Arb.From<Currency>(),
+        Arb.From<Currency>(),
+        GetValidRates(),
+        (pivot, currency, rate) =>
+        NewBank
+            .WithPivotCurrency(pivot)
+            .Add(new NewExchangeRate(currency, rate))
+            .IsRight
+        .When(pivot != currency));
 ```
 
 :green_circle: Improve the `ExchangeRate` design to move on.
-```java
-public class ExchangeRate {
-    private double rate;
-    private Currency currency;
 
-    private ExchangeRate(double rate, Currency currency) {
-        this.rate = rate;
-        this.currency = currency;
-    }
-
-    private static boolean isPositive(double rate) {
-        return rate > 0;
-    }
-
-    public static Either<Error, ExchangeRate> from(double rate, Currency currency) {
-        return isPositive(rate)
-                ? Right(new ExchangeRate(rate, currency))
-                : Left(new Error("Exchange rate should be greater than 0"));
-    }
-}
-```
-
-We then need to work at the `Bank` level:
-```java
-public class NewBank {
+```csharp
+public class NewBank
+{
     private Currency pivotCurrency;
 
-    private NewBank(Currency pivotCurrency) {
+    private NewBank(Currency pivotCurrency)
+    {
         this.pivotCurrency = pivotCurrency;
     }
 
-    public static NewBank withPivotCurrency(Currency pivotCurrency) {
-        return new NewBank(pivotCurrency);
-    }
+    public static NewBank WithPivotCurrency(Currency currency) { ... }
 
-    public Either<Error, NewBank> add(ExchangeRate exchangeRate) {
-        if (exchangeRate.getCurrency() == pivotCurrency) {
-            return Left(new Error("Can not add an exchange rate for the pivot currency"));
+    public Either<Error,NewBank> Add(NewExchangeRate exchangeRate)
+    {
+        if (exchangeRate.Currency != this.pivotCurrency)
+        {
+            return Either<Error, NewBank>.Right(this);
         }
-        return Right(new NewBank(pivotCurrency));
+        
+        return Either<Error, NewBank>.Left(new Error("Cannot add an exchange rate for the pivot currency."));
     }
 }
 
-And expose the currency of the ExchangeRate
+public struct NewExchangeRate
+{
+    private Currency currency;
+    private double rate;
 
-public class ExchangeRate {
-    ...
-    public Currency getCurrency() {
-        return currency;
-    }
-    ...
+    public NewExchangeRate(Currency currency, double rate) { ... }
+
+    public Currency Currency => this.currency;
+
+    public static Either<Error, NewExchangeRate> From(Currency currency, double rate) { ... }
 }
 ```
 
-:large_blue_circle: We can improve our `Bank` implementation:
+:large_blue_circle: We can refactor both our test and our implementation.
 
-```java
-public class NewBank {
-    private final Currency pivotCurrency;
+```csharp
+[Property]
+private Property CanAddExchangeRateForDifferentCurrencyThanPivot() =>
+    Prop.ForAll(
+        Arb.From<Currency>(),
+        Arb.From<Currency>(),
+        GetValidRates(),
+        (pivot, currency, rate) =>
+            AddShouldReturnBankForExchangeRateForDifferentCurrencyThanPivot(pivot, currency, rate)
+                .When(pivot != currency));
 
-    private NewBank(Currency pivotCurrency) {
-        this.pivotCurrency = pivotCurrency;
+private static bool AddShouldReturnBankForExchangeRateForDifferentCurrencyThanPivot(Currency pivot,
+    Currency currency, double rate) =>
+    NewBank
+        .WithPivotCurrency(pivot)
+        .Add(new NewExchangeRate(currency, rate))
+        .IsRight;
+```
+
+```csharp
+public class NewBank
+{
+    private readonly Currency pivotCurrency;
+
+    private NewBank(Currency pivotCurrency) => this.pivotCurrency = pivotCurrency;
+
+    public static NewBank WithPivotCurrency(Currency currency) => new(currency);
+
+    public Either<Error, NewBank> Add(NewExchangeRate exchangeRate) =>
+        this.IsPivotCurrency(exchangeRate.Currency)
+            ? Either<Error, NewBank>.Left(new Error("Cannot add an exchange rate for the pivot currency."))
+            : Either<Error, NewBank>.Right(this);
+
+    private bool IsPivotCurrency(Currency currency) => currency == this.pivotCurrency;
+}
+
+public struct NewExchangeRate
+{
+    private double rate;
+
+    public NewExchangeRate(Currency currency, double rate)
+    {
+        this.Currency = currency;
+        this.rate = rate;
     }
 
-    public static NewBank withPivotCurrency(Currency pivotCurrency) {
-        return new NewBank(pivotCurrency);
-    }
+    public Currency Currency { get; }
 
-    public Either<Error, NewBank> add(ExchangeRate exchangeRate) {
-        return exchangeRate.getCurrency() != pivotCurrency
-                ? Right(new NewBank(pivotCurrency))
-                : Left(new Error("Can not add an exchange rate for the pivot currency"));
+    public static Either<Error, NewExchangeRate> From(Currency currency, double rate) => Either<Error, NewExchangeRate>.Left(new Error("Exchange rate should be greater than 0."));
+}
+```
+
+:red_circle: We can finalize the implementation of our factory method.
+
+```csharp
+[Property]
+public Property CanUsePositiveAsExchangeRate() =>
+    Prop.ForAll(
+        Arb.From<Currency>(),
+        GetValidRates(),
+        ExchangeRateShouldReturnRate);
+
+private static Arbitrary<double> GetValidRates() => Arb.From<double>().MapFilter(_ => _, rate => rate > 0);
+
+private static bool ExchangeRateShouldReturnRate(Currency currency, double rate) =>
+    NewExchangeRate.From(currency, rate)
+        .Map(value => value.Currency == currency && value.Rate == rate)
+        .IfLeft(false);
+```
+
+:green_circle: Make it pass.
+
+```csharp
+public static Either<Error, NewExchangeRate> From(Currency currency, double rate)
+{
+    if (rate > 0)
+    {
+        return Either<Error, NewExchangeRate>.Right(new NewExchangeRate(currency, rate));
     }
+    
+    return Either<Error, NewExchangeRate>.Left(new Error("Exchange rate should be greater than 0."));
+}
+```
+
+:large_blue_circle: Refactor.
+
+```csharp
+public struct NewExchangeRate
+{
+    public NewExchangeRate(Currency currency, double rate) { ... }
+    public Currency Currency { get; }
+    public double Rate { get; }
+
+    public static Either<Error, NewExchangeRate> From(Currency currency, double rate) =>
+        IsValidRate(rate)
+            ? Either<Error, NewExchangeRate>.Right(new NewExchangeRate(currency, rate))
+            : Either<Error, NewExchangeRate>.Left(new Error("Exchange rate should be greater than 0."));
+
+    private static bool IsValidRate(double rate) => rate > 0;
+}
+
+public class NewExchangeRateProperties
+{
+    [Property]
+    public Property CanUsePositiveAsExchangeRate() =>
+        Prop.ForAll(
+            Arb.From<Currency>(),
+            GetValidRates(),
+            ExchangeRateShouldReturnRate);
+}
+```
+
+:large_blue_circle: Now that we finalized our implementation, we can use the factory method in the `NewBankProperties`,
+and make the `NewExchangeRate` constructor private to enforce parsing.
+
+```csharp
+public class NewBankProperties
+{
+    private static bool AddShouldReturnBankForExchangeRateForDifferentCurrencyThanPivot(Currency pivot,
+        Currency currency, double rate) =>
+        NewBank
+            .WithPivotCurrency(pivot)
+            .Add(CreateExchangeRate(currency, rate))
+            .IsRight;
+
+    private static bool AddShouldReturnErrorForSameCurrencyAsPivot(Currency currency, double rate, string message) =>
+        NewBank
+            .WithPivotCurrency(currency)
+            .Add(CreateExchangeRate(currency, rate)) == Either<Error, NewBank>.Left(new Error(message));
+
+    private static NewExchangeRate CreateExchangeRate(Currency currency, double rate) =>
+        (NewExchangeRate) NewExchangeRate.From(currency, rate).Case;
+}
+
+public struct NewExchangeRate
+{
+    private NewExchangeRate(Currency currency, double rate)
+    {
+        this.Currency = currency;
+        this.Rate = rate;
+    }
+    
+    public static Either<Error, NewExchangeRate> From(Currency currency, double rate) =>
+    IsValidRate(rate)
+        ? Either<Error, NewExchangeRate>.Right(new NewExchangeRate(currency, rate))
+        : Either<Error, NewExchangeRate>.Left(new Error("Exchange rate should be greater than 0."));
 }
 ```
 
 update an exchange rate for a Currency:
+
 ```text
 for all (pivotCurrency, currency, positiveDouble)
 such that currency != pivotCurrency

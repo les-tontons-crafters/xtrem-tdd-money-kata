@@ -1,3 +1,23 @@
-﻿namespace money_problem.Domain;
+﻿using LanguageExt;
 
-public record NewExchangeRate(Currency To, double Rate);
+namespace money_problem.Domain;
+
+public struct NewExchangeRate
+{
+    private NewExchangeRate(Currency currency, double rate)
+    {
+        this.Currency = currency;
+        this.Rate = rate;
+    }
+
+    public Currency Currency { get; }
+
+    public double Rate { get; }
+
+    public static Either<Error, NewExchangeRate> From(Currency currency, double rate) =>
+        IsValidRate(rate)
+            ? Either<Error, NewExchangeRate>.Right(new NewExchangeRate(currency, rate))
+            : Either<Error, NewExchangeRate>.Left(new Error("Exchange rate should be greater than 0."));
+
+    private static bool IsValidRate(double rate) => rate > 0;
+}
