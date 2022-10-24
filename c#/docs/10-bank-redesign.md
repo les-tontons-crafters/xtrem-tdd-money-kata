@@ -407,43 +407,46 @@ public struct NewExchangeRate
 }
 ```
 
-update an exchange rate for a Currency:
+> Update an exchange rate
 
 ```text
 for all (pivotCurrency, currency, positiveDouble)
 such that currency != pivotCurrency
-createBankWithPivotCurrency(pivotCurrency)
-    .add(new ExchangeRate(positiveDouble, currency))
-    .add(new ExchangeRate(positiveDouble + 0.1, currency)) should return success
+CreateBankWithPivotCurrency(pivotCurrency)
+    .Add(new ExchangeRate(positiveDouble, currency))
+    .Add(new ExchangeRate(positiveDouble + 0.1, currency)) should return success
 ```
 
-:green_circle: This behavior comes for free with our current design.
-```java
-@Property
-public void canUpdateAnExchangeRateForAnyCurrencyDifferentFromThePivot(
-        Currency pivotCurrency,
-        Currency otherCurrency,
-        @InRange(min = MINIMUM_RATE, max = MAXIMUM_RATE) double validRate) {
-    notPivotCurrency(pivotCurrency, otherCurrency);
+:green_circle: The bank hides its exchange rates. This behaviour comes for free because we can only test that the return
+value is an instance of `NewBank`.
+It is **already** implemented.
+Hence, we will not go through the red step.
 
-    var exchangeRate = createExchangeRate(otherCurrency, validRate);
-    var updatedExchangeRate = createExchangeRate(otherCurrency, validRate + 0.1);
+We still want the test to be visible in our living documentation.
 
-    assertThat(withPivotCurrency(pivotCurrency)
-            .add(exchangeRate)
-            .flatMap(newBank -> newBank.add(updatedExchangeRate)))
-            .isRight();
-}
+```csharp
+[Property]
+private Property CanUpdateExchangeRateForAnyCurrencyDifferentThanPivot() =>
+    Prop.ForAll(
+        Arb.From<Currency>(),
+        Arb.From<Currency>(),
+        GetValidRates(),
+        (pivot, currency, rate) => AddShouldReturnBankWhenUpdatingExchangeRate(pivot, currency, rate)
+            .When(pivot != currency));
+
+private static bool AddShouldReturnBankWhenUpdatingExchangeRate(Currency pivot, Currency currency, double rate) =>
+    NewBank.WithPivotCurrency(pivot)
+        .Add(CreateExchangeRate(currency, rate))
+        .Map(bank => bank.Add(CreateExchangeRate(currency, rate + 1)))
+        .IsRight;
 ```
 
-Make it fail by introducing a manual mutant to improve your confidence into this property.
+We can make it fail by introducing a manual mutant to improve your confidence in this property.
 
-At the moment, the last test on `add` only verify we receive a valid Bank.
-One may point out the test is not testing the real output.
-The problem is we currently don't have a way to observe a side-effect (aka. a rate has been added) as the Bank do not expose rates.
-This will be tested while testing the `convert` method, by increasing the size of our system-under-test.
+The actual output of `Add` will be tested while testing the `Convert` method by increasing the size of our
+system-under-test.
 
-Remember that you should **not** break encapsulation for the sake of testing. 
+Remember that you should **never** break encapsulation for the sake of testing.
 
 #### Convert a Money
 ![Convert a Money](img/bank-redesign-convert.png)

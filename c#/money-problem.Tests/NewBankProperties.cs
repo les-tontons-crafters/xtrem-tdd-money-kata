@@ -26,6 +26,21 @@ public class NewBankProperties
                 AddShouldReturnBankForExchangeRateForDifferentCurrencyThanPivot(pivot, currency, rate)
                     .When(pivot != currency));
 
+    [Property]
+    private Property CanUpdateExchangeRateForAnyCurrencyDifferentThanPivot() =>
+        Prop.ForAll(
+            Arb.From<Currency>(),
+            Arb.From<Currency>(),
+            GetValidRates(),
+            (pivot, currency, rate) => AddShouldReturnBankWhenUpdatingExchangeRate(pivot, currency, rate)
+                .When(pivot != currency));
+
+    private static bool AddShouldReturnBankWhenUpdatingExchangeRate(Currency pivot, Currency currency, double rate) =>
+        NewBank.WithPivotCurrency(pivot)
+            .Add(CreateExchangeRate(currency, rate))
+            .Map(bank => bank.Add(CreateExchangeRate(currency, rate + 1)))
+            .IsRight;
+
     private static Arbitrary<double> GetValidRates() => Arb.From<double>().MapFilter(_ => _, rate => rate > 0);
 
     private static bool AddShouldReturnBankForExchangeRateForDifferentCurrencyThanPivot(Currency pivot,
