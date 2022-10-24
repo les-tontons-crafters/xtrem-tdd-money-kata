@@ -449,323 +449,269 @@ system-under-test.
 Remember that you should **never** break encapsulation for the sake of testing.
 
 #### Convert a Money
-![Convert a Money](img/bank-redesign-convert.png)
+![Convert a Money](img/BankRedesignConvert.png)
 
-Convert in unknown currencies:
+> Convert in unknown currencies
+
 ```text
 for all (pivotCurrency, currency, money)
 such that currency != pivotCurrency
-createBankWithPivotCurrency(pivotCurrency)
-    .convert(money, currency) should return error(money.currency->currency)
+CreateBankWithPivotCurrency(pivotCurrency)
+    .Convert(money, currency) should return error(money.currency->currency)
 ```
 
-:red_circle: Add this failing test
-```java
-@Property
-public void canNotConvertToAnUnknownCurrencies(
-        Currency pivotCurrency,
-        Currency otherCurrency,
-        @From(MoneyGenerator.class) Money money) {
-    notPivotCurrency(pivotCurrency, otherCurrency);
+:red_circle: As usual, let's write a test first.
 
-    assertThat(withPivotCurrency(pivotCurrency)
-            .convert(money, otherCurrency))
-            .containsOnLeft(new Error("No exchange rate defined for " + money.currency() + "->" + otherCurrency));
-}
+```csharp
+[Property]
+private Property CannotConvertToUnknownCurrency() =>
+    Prop.ForAll(Arb.From<Currency>(),
+        Arb.From<Currency>(),
+        MoneyGenerator.GenerateMoneys(),
+        (pivot, currency, money) => (NewBank.WithPivotCurrency(pivot).Convert(money, currency) ==
+                                    Either<Error, Money>.Left(new Error($"{money.Currency}->{currency}.")))
+                                    .When(pivot != currency && money.Currency != currency));
 
-public class NewBank {
-    private final Currency pivotCurrency;
-
-    private NewBank(Currency pivotCurrency) {
-        this.pivotCurrency = pivotCurrency;
-    }
-
-    public static NewBank withPivotCurrency(Currency pivotCurrency) {
-        return new NewBank(pivotCurrency);
-    }
-
-    public Either<Error, NewBank> add(ExchangeRate exchangeRate) {
-        return exchangeRate.getCurrency() != pivotCurrency
-                ? Right(new NewBank(pivotCurrency))
-                : Left(new Error("Can not add an exchange rate for the pivot currency"));
-    }
-
-    // To compile
-    public Either<Error, NewBank> convert(Money money, Currency to) {
-        return null;
+public class NewBank 
+{
+    public Either<Error, Money> Convert(Money money, Currency currency)
+    {
+        throw new NotImplementedException();
     }
 }
 ```
 
 :green_circle: Make it pass.
-```java
-public class NewBank {
-    ...
-
-    public Either<Error, Money> convert(Money money, Currency to) {
-        return Left(new Error("No exchange rate defined for " + money.currency() + "->" + to));
+```csharp
+public class NewBank 
+{
+    public Either<Error, Money> Convert(Money money, Currency currency)
+    {
+        return new Error($"{money.Currency}->{currency}.");
     }
 }
 ```
 
-:large_blue_circle: Any refactoring?
+:large_blue_circle: Refactor and reduce the noise in the test.
+````csharp
+[Property]
+private Property CannotConvertToUnknownCurrency() =>
+    Prop.ForAll(Arb.From<Currency>(),
+        Arb.From<Currency>(),
+        MoneyGenerator.GenerateMoneys(),
+        (pivot, currency, money) => ConvertShouldReturnErrorWhenCurrencyIsUnknown(pivot, money, currency)
+        .When(pivot != currency && money.Currency != currency));
 
-Let's work on another property: convert any amount from pivot to pivot returns the original money
+private static bool ConvertShouldReturnErrorWhenCurrencyIsUnknown(Currency pivot, Money money, Currency currency) =>
+    NewBank.WithPivotCurrency(pivot).Convert(money, currency) ==
+    Either<Error, Money>.Left(new Error($"{money.Currency}->{currency}."));
+````
+
+> Convert from any currency to same currency should return the same amount
+
+We can rationalize this as converting money in the same currency should return the same money, no matter the pivot currency.
+
 ```text
-for all (money)
-createBankWithPivotCurrency(money.currency)
-    .convert(money, money.currency) should return money
+for all (pivot, money)
+CreateBankWithPivotCurrency(pivot)
+    .Convert(money, money.currency) should return money
 ```
 
-:red_circle: Let's describe it with `quickcheck`
-```java
-@Property
-public void convertAnyMoneyInPivotCurrencyToPivotCurrencyReturnMoneyItself(
-        @From(MoneyGenerator.class) Money money) {
-    assertThat(withPivotCurrency(money.currency())
-            .convert(money, money.currency()))
-            .containsOnRight(money);
-}
+:red_circle: As usual, write the test first.
+```csharp
+[Property]
+private Property ConvertToSameCurrencyReturnSameMoney() =>
+    Prop.ForAll(Arb.From<Currency>(),
+        MoneyGenerator.GenerateMoneys(),
+        (pivot, money) => (NewBank.WithPivotCurrency(pivot).Convert(money, pivot) == money).When(pivot != money.Currency));
 ```
 
-:green_circle: Improve the `Bank` implementation
-```java
-public class NewBank {
-    ...
-
-    public Either<Error, Money> convert(Money money, Currency to) {
-        if (money.currency() == to && to == pivotCurrency) {
-            return Right(money);
+:green_circle: Make it pass.
+```csharp
+public class NewBank 
+{
+    public Either<Error, Money> Convert(Money money, Currency currency)
+    {
+        if (money.Currency == currency)
+        {
+            return Either<Error, Money>.Right(money);
         }
-        return Left(new Error("No exchange rate defined for " + money.currency() + "->" + to));
+        return Either<Error, Money>.Left(new Error($"{money.Currency}->{currency}."));
     }
 }
 ```
 
-:large_blue_circle: Simplify conditions to make it clear what's going on:
-```java
-public class NewBank {
-    ...
-    public Either<Error, Money> convert(Money money, Currency to) {
-        return convertFromAndToPivotCurrency(money, to)
-                ? Right(money)
-                : Left(new Error("No exchange rate defined for " + money.currency() + "->" + to));
-    }
+:large_blue_circle: Refactor, reduce noise and make the code more declarative.
+```csharp
+public class NewBank 
+{
+    public Either<Error, Money> Convert(Money money, Currency currency) =>
+        CanConvertMoney(money, currency)
+            ? Either<Error, Money>.Right(money)
+            : Either<Error, Money>.Left(new Error(FormatMissingExchangeRate(money.Currency, currency)));
+    
+    private static bool CanConvertMoney(Money money, Currency currency) => money.Currency == currency;
+    
+    private static string FormatMissingExchangeRate(Currency from, Currency to) => $"{from}->{to}.";
+}
 
-    private boolean convertFromAndToPivotCurrency(Money money, Currency to) {
-        return money.currency() == to && to == pivotCurrency;
-    }
+public class NewBankProperties
+{
+    [Property]
+    private Property ConvertToSameCurrencyReturnSameMoney() =>
+        Prop.ForAll(
+            Arb.From<Currency>(),
+            MoneyGenerator.GenerateMoneys(),
+            (pivot, money) => ConvertShouldReturnMoneyWhenConvertingToSameCurrency(pivot, money)
+                .When(pivot != money.Currency));
+
+    private static bool ConvertShouldReturnMoneyWhenConvertingToSameCurrency(Currency pivot, Money money) =>
+        NewBank.WithPivotCurrency(pivot).Convert(money, money.Currency) == money;
 }
 ```
 
-Let's move on with a new rule / examples
+> Convert from pivot currency to another known currency
 
-```text
-for all (pivotCurrency, currency, validRate, money)
-such that currency != pivotCurrency
-createBankWithPivotCurrency(pivotCurrency)
-    .add(new ExchangeRate(validRate, money.currency))
-    .convert(money, currency) should return money
-```
+:red_circle: We want to assess more than just the behaviour but also the values. We can use standard `unit tests` for that.
 
-:red_circle: Let's automate this property
-```java
-@Property
-public void convertAnyMoneyToMoneyCurrencyReturnMoneyItself(
-        Currency pivotCurrency,
-        @From(MoneyGenerator.class) Money money,
-        @InRange(min = MINIMUM_RATE, max = MAXIMUM_RATE) double validRate) {
-    notPivotCurrency(pivotCurrency, money.currency());
-
-    assertThat(withPivotCurrency(pivotCurrency)
-            .add(createExchangeRate(validRate, money.currency()))
-            .flatMap(newBank -> newBank.convert(money, money.currency())))
-            .containsOnRight(money);
+```csharp
+public class NewBankTest
+{
+    [Fact]
+    public void ConvertInDollarsFromEuros() =>
+        NewBank
+            .WithPivotCurrency(Currency.EUR)
+            .Add(DomainUtility.CreateExchangeRate(Currency.USD, 1.2))
+            .Map(bank => bank.Convert(10d.Euros(), Currency.USD))
+            .Should()
+            .Be(12d.Dollars());
 }
 ```
 
-:green_circle: Pretty easy to make it pass, we just have to simplify checks in `Bank`
-```java
-public class NewBank {
-    private final Currency pivotCurrency;
+:green_circle: To make it pass, we will finally have to use our internal exchange rates. This test will cover what we previously left out.
+```csharp
+public class NewBank 
+{
+    private readonly Seq<NewExchangeRate> exchangeRates;
+    private readonly Currency pivotCurrency;
 
-    private NewBank(Currency pivotCurrency) {
-        this.pivotCurrency = pivotCurrency;
-    }
-
-    public static NewBank withPivotCurrency(Currency pivotCurrency) {
-        return new NewBank(pivotCurrency);
-    }
-
-    public Either<Error, NewBank> add(ExchangeRate exchangeRate) {
-        return exchangeRate.getCurrency() != pivotCurrency
-                ? Right(new NewBank(pivotCurrency))
-                : Left(new Error("Can not add an exchange rate for the pivot currency"));
-    }
-
-    public Either<Error, Money> convert(Money money, Currency to) {
-        return canConvert(money, to)
-                ? Right(money)
-                : Left(new Error("No exchange rate defined for " + money.currency() + "->" + to));
-    }
-
-    private boolean canConvert(Money money, Currency to) {
-        return money.currency() == to;
-    }
-}
-```
-
-:large_blue_circle: Not that much to refactor right now.
-
-Let's move on another test case: "convert from pivot currency to another known currency".
-Here we would like to assess more than just the behavior but also the values. We can use normal `unit tests` for that.
-
-:red_circle: Convert from pivot to an existing currency
-
-```java
-class NewBankTest {
-    public static final Currency PIVOT_CURRENCY = EUR;
-    private final NewBank bank = NewBank.withPivotCurrency(PIVOT_CURRENCY);
-
-    @Test
-    @DisplayName("10 EUR -> USD = 12 USD")
-    void convertInDollarsWithEURAsPivotCurrency() {
-        assertThat(bank.add(createExchangeRate(1.2, USD))
-                .flatMap(newBank -> newBank.convert(euros(10), USD)))
-                .containsOnRight(dollars(12));
-    }
-}
-```
-
-:green_circle: To make it pass, we need to now handle the exchangeRates inside our implementation
-```java
-public class NewBank {
-    private final Currency pivotCurrency;
-    private final Map<String, ExchangeRate> exchangeRates;
-
-    private NewBank(Currency pivotCurrency, Map<String, ExchangeRate> exchangeRates) {
+    private NewBank(Currency pivotCurrency, Seq<NewExchangeRate> exchangeRates)
+    {
         this.pivotCurrency = pivotCurrency;
         this.exchangeRates = exchangeRates;
     }
 
-    private NewBank(Currency pivotCurrency) {
-        this(pivotCurrency, empty());
-    }
+    public static NewBank WithPivotCurrency(Currency currency) => new(currency, Seq<NewExchangeRate>.Empty);
 
-    public static NewBank withPivotCurrency(Currency pivotCurrency) {
-        return new NewBank(pivotCurrency);
-    }
+    public Either<Error, NewBank> Add(NewExchangeRate exchangeRate) =>
+        this.IsPivotCurrency(exchangeRate.Currency)
+            ? Either<Error, NewBank>.Left(new Error("Cannot add an exchange rate for the pivot currency."))
+            : Either<Error, NewBank>.Right(new NewBank(this.pivotCurrency, this.exchangeRates.Add(exchangeRate)));
 
-    public Either<Error, NewBank> add(ExchangeRate exchangeRate) {
-        return !isSameCurrency(exchangeRate.getCurrency(), pivotCurrency)
-                ? Right(addRate(exchangeRate))
-                : Left(new Error("Can not add an exchange rate for the pivot currency"));
-    }
+    private bool IsPivotCurrency(Currency currency) => currency == this.pivotCurrency;
 
-    private boolean isSameCurrency(Currency exchangeRate, Currency pivotCurrency) {
-        return exchangeRate == pivotCurrency;
-    }
+    public Either<Error, Money> Convert(Money money, Currency currency) =>
+        this.CanConvertMoney(money, currency)
+            ? this.ConvertMoney(money, currency)
+            : Either<Error, Money>.Left(new Error(FormatMissingExchangeRate(money.Currency, currency)));
 
-    private NewBank addRate(ExchangeRate exchangeRate) {
-        return new NewBank(
-                pivotCurrency,
-                exchangeRates.put(keyFor(pivotCurrency, exchangeRate.getCurrency()), exchangeRate)
-        );
-    }
-
-    private static String keyFor(Currency from, Currency to) {
-        return from + "->" + to;
-    }
-
-    public Either<Error, Money> convert(Money money, Currency to) {
-        return canConvert(money, to)
-                ? Right(convertSafely(money, to))
-                : Left(new Error("No exchange rate defined for " + money.currency() + "->" + to));
-    }
-
-    private boolean canConvert(Money money, Currency to) {
-        return isSameCurrency(money.currency(), to) ||
-                exchangeRates.containsKey(keyFor(money.currency(), to));
-    }
-
-    private Money convertSafely(Money money, Currency to) {
-        if (isSameCurrency(money.currency(), to)) {
-            return money;
-        } else {
-            var exchangeRate = exchangeRates.getOrElse(keyFor(money.currency(), to), new ExchangeRate(0, to));
-            return new Money(money.amount() * exchangeRate.getRate(), to);
+    private Either<Error, Money> ConvertMoney(Money money, Currency currency)
+    {
+        if (money.Currency == currency)
+        {
+            return Either<Error, Money>.Right(money);
         }
+
+        var exchange = this.exchangeRates
+            .Find(exchangeRate => exchangeRate.Currency == currency)
+            .IfNone(() => throw new NotImplementedException());
+        return new Money(money.Amount * exchange.Rate, currency);
     }
+
+    private bool CanConvertMoney(Money money, Currency currency) => money.Currency == currency ||
+                                                                    this.exchangeRates.Any(exchange =>
+                                                                        exchange.Currency == currency);
 }
 ```
 
-:large_blue_circle: Make some refactoring to improve readability
-```java
-public class NewBank {
-    private final Currency pivotCurrency;
-    private final Map<String, ExchangeRate> exchangeRates;
+:large_blue_circle: We can now work on code readability and clarity.
+```csharp
+public class NewBank
+{
+    public const string SameExchangeRateThanCurrency = "Cannot add an exchange rate for the pivot currency.";
+    private readonly Seq<NewExchangeRate> exchangeRates;
+    private readonly Currency pivotCurrency;
 
-    private NewBank(Currency pivotCurrency, Map<String, ExchangeRate> exchangeRates) {
+    private NewBank(Currency pivotCurrency, Seq<NewExchangeRate> exchangeRates)
+    {
         this.pivotCurrency = pivotCurrency;
         this.exchangeRates = exchangeRates;
     }
 
-    private NewBank(Currency pivotCurrency) {
-        this(pivotCurrency, empty());
-    }
+    public static NewBank WithPivotCurrency(Currency currency) => new(currency, LanguageExt.Seq<NewExchangeRate>.Empty);
 
-    public static NewBank withPivotCurrency(Currency pivotCurrency) {
-        return new NewBank(pivotCurrency);
-    }
+    public Either<Error, NewBank> Add(NewExchangeRate exchangeRate) =>
+        this.IsPivotCurrency(exchangeRate.Currency)
+            ? Either<Error, NewBank>.Left(new Error(SameExchangeRateThanCurrency))
+            : Either<Error, NewBank>.Right(this.AddExchangeRate(exchangeRate));
 
-    public Either<Error, NewBank> add(ExchangeRate exchangeRate) {
-        return !isSameCurrency(exchangeRate.getCurrency(), pivotCurrency)
-                ? Right(addRate(exchangeRate))
-                : Left(new Error("Can not add an exchange rate for the pivot currency"));
-    }
+    private NewBank AddExchangeRate(NewExchangeRate exchangeRate) =>
+        new(this.pivotCurrency, this.exchangeRates
+            .Add(exchangeRate));
 
-    private boolean isSameCurrency(Currency exchangeRate, Currency pivotCurrency) {
-        return exchangeRate == pivotCurrency;
-    }
+    private bool IsPivotCurrency(Currency currency) => currency == this.pivotCurrency;
 
-    private NewBank addRate(ExchangeRate exchangeRate) {
-        return new NewBank(
-                pivotCurrency,
-                exchangeRates.put(keyFor(pivotCurrency, exchangeRate.getCurrency()), exchangeRate)
-        );
-    }
+    public Either<Error, Money> Convert(Money money, Currency currency) =>
+        this.GetExchangeRate(money, currency)
+            .Map(rate => ConvertUsingExchangeRate(money, rate))
+            .Match(some => Either<Error, Money>.Right(some),
+                () => Either<Error, Money>.Left(new Error(FormatMissingExchangeRate(money.Currency, currency))));
 
-    private static String keyFor(Currency from, Currency to) {
-        return from + "->" + to;
-    }
+    private Option<NewExchangeRate> GetExchangeRate(Money money, Currency currency) =>
+        money.HasCurrency(currency)
+            ? NewExchangeRate
+                .From(currency, 1)
+                .Match(Some, _ => Option<NewExchangeRate>.None)
+            : this.FindExchangeRate(currency);
 
-    public Either<Error, Money> convert(Money money, Currency to) {
-        return canConvert(money, to)
-                ? Right(convertSafely(money, to))
-                : Left(new Error("No exchange rate defined for " + keyFor(money.currency(), to)));
-    }
+    private static Money ConvertUsingExchangeRate(Money money, NewExchangeRate exchangeRate) =>
+        new(money.Amount * exchangeRate.Rate, exchangeRate.Currency);
 
-    private boolean canConvert(Money money, Currency to) {
-        return isSameCurrency(money.currency(), to) ||
-                canConvertDirectly(money, to);
-    }
+    private Option<NewExchangeRate> FindExchangeRate(Currency currency) =>
+        this.exchangeRates.Find(exchange => exchange.Currency == currency);
 
-    private boolean canConvertDirectly(Money money, Currency to) {
-        return exchangeRates.containsKey(keyFor(money.currency(), to));
-    }
-
-    private Money convertSafely(Money money, Currency to) {
-        return isSameCurrency(money.currency(), to)
-                ? money
-                : convertFromPivotCurrency(money, to);
-    }
-
-    private Money convertFromPivotCurrency(Money money, Currency to) {
-        var exchangeRate = exchangeRates.getOrElse(keyFor(money.currency(), to), new ExchangeRate(0, to));
-        return new Money(money.amount() * exchangeRate.getRate(), to);
-    }
+    private static string FormatMissingExchangeRate(Currency from, Currency to) => $"{from}->{to}.";
 }
 ```
+
+:red_circle: We need to be cautious about a scenario here that we faced before with the previous bank implementation:
+When updating an exchange rate, we add another element to the list.
+It means the previous one is still on the list, and `.Find` will likely pick the old one.
+
+Let's write a test to check this one out.
+
+:red_circle: And it's a red step because it **fails**.
+```csharp
+[Fact]
+public void ConvertInDollarsFromEurosWithUpdatedRate() =>
+    NewBank
+        .WithPivotCurrency(Currency.EUR)
+        .Add(DomainUtility.CreateExchangeRate(Currency.USD, 1.1))
+        .Bind(bank => bank.Add(DomainUtility.CreateExchangeRate(Currency.USD, 1.2)))
+        .Map(bank => bank.Convert(10d.Euros(), Currency.USD))
+        .Should()
+        .Be(12d.Dollars());
+```
+
+:green_circle: Make it pass.
+```csharp
+private NewBank AddExchangeRate(NewExchangeRate exchangeRate) =>
+    new(this.pivotCurrency, this.exchangeRates
+        .Filter(element => element.Currency != exchangeRate.Currency)
+        .Add(exchangeRate));
+```
+
+
 
 Let's add the last example: convert through pivot currency.
 ```gherkin

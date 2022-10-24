@@ -6,4 +6,6 @@ public record Money(double Amount, Currency Currency)
     public Money Divide(int divisor) => this with {Amount = this.Amount / divisor};
 
     public static Money Empty(Currency currency) => new Money(default, currency);
+
+    public bool HasCurrency(Currency currency) => this.Currency == currency;
 }
