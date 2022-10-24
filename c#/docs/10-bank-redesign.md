@@ -711,25 +711,28 @@ private NewBank AddExchangeRate(NewExchangeRate exchangeRate) =>
         .Add(exchangeRate));
 ```
 
-
+> Convert through Pivot Currency
 
 Let's add the last example: convert through pivot currency.
 ```gherkin
-Given a Bank with Euro as Pivot Currency and an exchange rate of 1.2 defined for Dollar and an exchange rate of 1344 defined for Korean Wons
-When I convert 10 Dollars to Korean Wons
-Then it should return 11 200 Korean Wons
+Given a bank with a EUR currency
+And has an exchange rate of 1.2 for USD 
+And has an exchange rate of 1344 for KRX
+When I convert 10 USD to KRW
+Then the bank should return 11200 KRW
 ```
 
-:red_circle: Add our new example in our tests:
-```java
-@Test
-@DisplayName("10 USD -> KRW = 11 200 KRW")
-void convertThroughPivotCurrency() {
-    assertThat(bank.add(rateFor(1.2, USD))
-            .flatMap(b -> b.add(rateFor(1344, KRW)))
-            .flatMap(newBank -> newBank.convert(dollars(10), KRW)))
-            .containsOnRight(koreanWons(11200));
-}
+:red_circle: Write a failing test with our example.
+```chsarp
+[Fact]
+public void ConvertThroughPivotCurrency() =>
+    NewBank
+        .WithPivotCurrency(Currency.EUR)
+        .Add(DomainUtility.CreateExchangeRate(Currency.USD, 1.2))
+        .Bind(bank => bank.Add(DomainUtility.CreateExchangeRate(Currency.KRW, 1344)))
+        .Map(bank => bank.Convert(10d.Dollars(), Currency.KRW))
+        .Should()
+        .Be(11220d.KoreanWons());
 ```
 
 :green_circle: We need to handle how to convert through pivot currency between 2 currencies.
