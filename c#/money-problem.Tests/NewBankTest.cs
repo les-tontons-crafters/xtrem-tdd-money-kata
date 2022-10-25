@@ -1,5 +1,4 @@
-﻿using FluentAssertions;
-using FluentAssertions.LanguageExt;
+﻿using FluentAssertions.LanguageExt;
 using money_problem.Domain;
 using Xunit;
 
@@ -15,7 +14,7 @@ public class NewBankTest
             .Map(bank => bank.Convert(10d.Euros(), Currency.USD))
             .Should()
             .Be(12d.Dollars());
-    
+
     [Fact]
     public void ConvertInDollarsFromEurosWithUpdatedRate() =>
         NewBank
@@ -25,7 +24,7 @@ public class NewBankTest
             .Map(bank => bank.Convert(10d.Euros(), Currency.USD))
             .Should()
             .Be(12d.Dollars());
-    
+
     [Fact]
     public void ConvertThroughPivotCurrency() =>
         NewBank
@@ -34,5 +33,5 @@ public class NewBankTest
             .Bind(bank => bank.Add(DomainUtility.CreateExchangeRate(Currency.KRW, 1344)))
             .Map(bank => bank.Convert(10d.Dollars(), Currency.KRW))
             .Should()
-            .Be(11220d.KoreanWons());
+            .Be(11200d.KoreanWons());
 }

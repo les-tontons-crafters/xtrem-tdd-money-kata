@@ -723,7 +723,7 @@ Then the bank should return 11200 KRW
 ```
 
 :red_circle: Write a failing test with our example.
-```chsarp
+```csharp
 [Fact]
 public void ConvertThroughPivotCurrency() =>
     NewBank
@@ -732,288 +732,117 @@ public void ConvertThroughPivotCurrency() =>
         .Bind(bank => bank.Add(DomainUtility.CreateExchangeRate(Currency.KRW, 1344)))
         .Map(bank => bank.Convert(10d.Dollars(), Currency.KRW))
         .Should()
-        .Be(11220d.KoreanWons());
+        .Be(11200d.KoreanWons());
 ```
 
-:green_circle: We need to handle how to convert through pivot currency between 2 currencies.
-In terms of design one easy way to handle it is to register multiplier and divider exchange rates when adding an exchange rate.
-We need to check as well at the conversion time if we can make the conversion:
-- To the same currency
-- From pivot to a known currency (direct conversion)
-- From a known currency to another know one (conversion through pivot currency)
+:green_circle: We need to handle how to convert through the pivot currency: source -> pivot -> destination.
+There are multiple ways to take that.
+We could consider a single operation while creating a `computed` exchange rate.
+It would limit the impact on the code.
 
-```java
-public class NewBank {
-    private final Currency pivotCurrency;
-    private final Map<String, ExchangeRate> exchangeRates;
+```csharp
+public class NewBank 
+{
+    private Option<NewExchangeRate> GetExchangeRate(Money money, Currency currency)
+    {
+        if (money.HasCurrency(currency))
+        {
+            return NewExchangeRate
+                .From(currency, 1)
+                .Match(Some, _ => Option<NewExchangeRate>.None);
+        }
 
-    private NewBank(Currency pivotCurrency, Map<String, ExchangeRate> exchangeRates) {
-        this.pivotCurrency = pivotCurrency;
-        this.exchangeRates = exchangeRates;
+        var exchangeSource = this.FindExchangeRate(money.Currency);
+        var exchangeDestination = this.FindExchangeRate(currency);
+        return !this.IsPivotCurrency(money.Currency)
+               && !this.IsPivotCurrency(currency)
+            ? ComputeExchangeRate(exchangeSource, exchangeDestination, currency)
+            : exchangeDestination;
     }
 
-    private NewBank(Currency pivotCurrency) {
-        this(pivotCurrency, empty());
-    }
-
-    public static NewBank withPivotCurrency(Currency pivotCurrency) {
-        return new NewBank(pivotCurrency);
-    }
-
-    public Either<Error, NewBank> add(ExchangeRate exchangeRate) {
-        return !isSameCurrency(exchangeRate.getCurrency(), pivotCurrency)
-                ? Right(addMultiplierAndDividerExchangeRate(exchangeRate))
-                : Left(new Error("Can not add an exchange rate for the pivot currency"));
-    }
-
-    private boolean isSameCurrency(Currency exchangeRate, Currency pivotCurrency) {
-        return exchangeRate == pivotCurrency;
-    }
-
-    private NewBank addMultiplierAndDividerExchangeRate(ExchangeRate exchangeRate) {
-        return new NewBank(
-                pivotCurrency,
-                exchangeRates.put(keyFor(pivotCurrency, exchangeRate.getCurrency()), exchangeRate)
-                        .put(keyFor(exchangeRate.getCurrency(), pivotCurrency), dividerRate(exchangeRate))
-        );
-    }
-
-    private ExchangeRate dividerRate(ExchangeRate exchangeRate) {
-        return new ExchangeRate(1 / exchangeRate.getRate(), exchangeRate.getCurrency());
-    }
-
-    private static String keyFor(Currency from, Currency to) {
-        return from + "->" + to;
-    }
-
-    public Either<Error, Money> convert(Money money, Currency to) {
-        return canConvert(money, to)
-                ? Right(convertSafely(money, to))
-                : Left(new Error("No exchange rate defined for " + keyFor(money.currency(), to)));
-    }
-
-    private boolean canConvert(Money money, Currency to) {
-        return isSameCurrency(money.currency(), to) ||
-                canConvertDirectly(money, to) ||
-                canConvertThroughPivotCurrency(money, to);
-    }
-
-    private boolean canConvertDirectly(Money money, Currency to) {
-        return exchangeRates.containsKey(keyFor(money.currency(), to));
-    }
-
-    private boolean canConvertThroughPivotCurrency(Money money, Currency to) {
-        return exchangeRates.containsKey(keyFor(pivotCurrency, money.currency()))
-                && exchangeRates.containsKey(keyFor(pivotCurrency, to));
-    }
-
-    private Money convertSafely(Money money, Currency to) {
-        if (isSameCurrency(money.currency(), to))
-            return money;
-
-        return canConvertDirectly(money, to)
-                ? convertDirectly(money, to)
-                : convertThroughPivotCurrency(money, to);
-    }
-
-    private Money convertThroughPivotCurrency(Money money, Currency to) {
-        var convertToPivot = convertDirectly(money, pivotCurrency);
-        var convertToToCurrency = convertDirectly(convertToPivot, to);
-
-        return convertToToCurrency;
-    }
-
-    private Money convertDirectly(Money money, Currency to) {
-        var exchangeRate = exchangeRates.getOrElse(keyFor(money.currency(), to), new ExchangeRate(0, to));
-        return new Money(money.amount() * exchangeRate.getRate(), to);
+    private static Option<NewExchangeRate> ComputeExchangeRate(Option<NewExchangeRate> source, Option<NewExchangeRate> destination)
+    {
+        return destination
+            .Bind(exchange => source
+                .Map(sourceExchange => 1 / sourceExchange.Rate)
+                .Map(rate => rate * exchange.Rate)
+                .Map(rate => new Tuple<Currency, double>(exchange.Currency, rate)))
+            .Map(tuple => NewExchangeRate
+                .From(tuple.Item1, tuple.Item2)
+                .IfLeft(_ => NewExchangeRate.Default(tuple.Item1)));
     }
 }
 ```
 
 :large_blue_circle: Simplify the code and its readability.
-```java
-public class NewBank {
-    private final Currency pivotCurrency;
-    private final Map<String, ExchangeRate> exchangeRates;
 
-    private NewBank(Currency pivotCurrency, Map<String, ExchangeRate> exchangeRates) {
-        this.pivotCurrency = pivotCurrency;
-        this.exchangeRates = exchangeRates;
+```csharp
+public class NewBank 
+{
+        private Option<NewExchangeRate> GetExchangeRate(Money money, Currency currency)
+    {
+        if (money.HasCurrency(currency))
+        {
+            return GetExchangeRateForSameCurrency(currency);
+        }
+
+        var exchangeSource = this.FindExchangeRate(money.Currency);
+        var exchangeDestination = this.FindExchangeRate(currency);
+        return this.ShouldConvertThroughPivotCurrency(money.Currency, currency)
+            ? ComputeExchangeRate(exchangeSource, exchangeDestination)
+            : exchangeDestination;
     }
 
-    private NewBank(Currency pivotCurrency) {
-        this(pivotCurrency, empty());
-    }
+    private static Option<NewExchangeRate> GetExchangeRateForSameCurrency(Currency currency) =>
+        NewExchangeRate
+            .From(currency, 1)
+            .Match(Some, _ => Option<NewExchangeRate>.None);
 
-    public static NewBank withPivotCurrency(Currency pivotCurrency) {
-        return new NewBank(pivotCurrency);
-    }
+    private bool ShouldConvertThroughPivotCurrency(Currency source, Currency destination) =>
+        !this.IsPivotCurrency(source) && !this.IsPivotCurrency(destination);
 
-    public Either<Error, NewBank> add(ExchangeRate exchangeRate) {
-        return !isSameCurrency(exchangeRate.getCurrency(), pivotCurrency)
-                ? Right(addMultiplierAndDividerExchangeRate(exchangeRate))
-                : Left(new Error("Can not add an exchange rate for the pivot currency"));
-    }
-
-    private boolean isSameCurrency(Currency exchangeRate, Currency pivotCurrency) {
-        return exchangeRate == pivotCurrency;
-    }
-
-    private NewBank addMultiplierAndDividerExchangeRate(ExchangeRate exchangeRate) {
-        return new NewBank(
-                pivotCurrency,
-                exchangeRates.put(keyFor(pivotCurrency, exchangeRate.getCurrency()), exchangeRate)
-                        .put(keyFor(exchangeRate.getCurrency(), pivotCurrency), dividerRate(exchangeRate))
-        );
-    }
-
-    private ExchangeRate dividerRate(ExchangeRate exchangeRate) {
-        return new ExchangeRate(1 / exchangeRate.getRate(), exchangeRate.getCurrency());
-    }
-
-    private static String keyFor(Currency from, Currency to) {
-        return from + "->" + to;
-    }
-
-    public Either<Error, Money> convert(Money money, Currency to) {
-        return canConvert(money, to)
-                ? Right(convertSafely(money, to))
-                : Left(new Error("No exchange rate defined for " + keyFor(money.currency(), to)));
-    }
-
-    private boolean canConvert(Money money, Currency to) {
-        return isSameCurrency(money.currency(), to) ||
-                canConvertDirectly(money, to) ||
-                canConvertThroughPivotCurrency(money, to);
-    }
-
-    private boolean canConvertDirectly(Money money, Currency to) {
-        return exchangeRates.containsKey(keyFor(money.currency(), to));
-    }
-
-    private boolean canConvertThroughPivotCurrency(Money money, Currency to) {
-        return exchangeRates.containsKey(keyFor(pivotCurrency, money.currency()))
-                && exchangeRates.containsKey(keyFor(pivotCurrency, to));
-    }
-
-    private Money convertSafely(Money money, Currency to) {
-        if (isSameCurrency(money.currency(), to))
-            return money;
-
-        return canConvertDirectly(money, to)
-                ? convertDirectly(money, to)
-                : convertThroughPivotCurrency(money, to);
-    }
-
-    private Money convertDirectly(Money money, Currency to) {
-        var exchangeRate = exchangeRates.getOrElse(keyFor(money.currency(), to), new ExchangeRate(0, to));
-        return new Money(money.amount() * exchangeRate.getRate(), to);
-    }
-
-    private Money convertThroughPivotCurrency(Money money, Currency to) {
-        return convertDirectly(convertDirectly(money, pivotCurrency), to);
-    }
+    private static Option<NewExchangeRate> ComputeExchangeRate(Option<NewExchangeRate> source, Option<NewExchangeRate> destination) =>
+        destination
+            .Bind(exchange => source
+                .Map(sourceExchange => GetReversedRate(sourceExchange.Rate))
+                .Map(rate => rate * exchange.Rate)
+                .Map(rate => new Tuple<Currency, double>(exchange.Currency, rate)))
+            .Map(exchange => NewExchangeRate
+                .From(exchange.Item1, exchange.Item2)
+                .IfLeft(_ => NewExchangeRate.Default(exchange.Item1)));
 }
 ```
 
-:large_blue_circle: Could we simplify `canConvert` and `convert` methods? 
-> We may use a function map to simplify this code and reduce its cyclomatic complexity.
+:large_blue_circle: Simplify monad typing using implicit conversions.
 
-```java
-public class NewBank {
-    private final Currency pivotCurrency;
-    private final Map<String, ExchangeRate> exchangeRates;
+From this:
 
-    private final Map<Function2<Money, Currency, Boolean>, Function2<Money, Currency, Money>> convert = of(
-            (money, to) -> isSameCurrency(money.currency(), to), (money, to) -> money,
-            this::canConvertDirectly, this::convertDirectly,
-            this::canConvertThroughPivotCurrency, this::convertThroughPivotCurrency
-    );
-
-    private NewBank(Currency pivotCurrency, Map<String, ExchangeRate> exchangeRates) {
-        this.pivotCurrency = pivotCurrency;
-        this.exchangeRates = exchangeRates;
-    }
-
-    private NewBank(Currency pivotCurrency) {
-        this(pivotCurrency, empty());
-    }
-
-    public static NewBank withPivotCurrency(Currency pivotCurrency) {
-        return new NewBank(pivotCurrency);
-    }
-
-    public Either<Error, NewBank> add(ExchangeRate exchangeRate) {
-        return !isSameCurrency(exchangeRate.getCurrency(), pivotCurrency)
-                ? Right(addMultiplierAndDividerExchangeRate(exchangeRate))
-                : Left(new Error("Can not add an exchange rate for the pivot currency"));
-    }
-
-    private boolean isSameCurrency(Currency currency, Currency otherCurrency) {
-        return currency == otherCurrency;
-    }
-
-    private NewBank addMultiplierAndDividerExchangeRate(ExchangeRate exchangeRate) {
-        return new NewBank(
-                pivotCurrency,
-                exchangeRates.put(keyFor(pivotCurrency, exchangeRate.getCurrency()), exchangeRate)
-                        .put(keyFor(exchangeRate.getCurrency(), pivotCurrency), dividerRate(exchangeRate))
-        );
-    }
-
-    private ExchangeRate dividerRate(ExchangeRate exchangeRate) {
-        return new ExchangeRate(1 / exchangeRate.getRate(), exchangeRate.getCurrency());
-    }
-
-    private static String keyFor(Currency from, Currency to) {
-        return from + "->" + to;
-    }
-
-    public Either<Error, Money> convert(Money money, Currency to) {
-        return convert.find(canConvert -> canConvert._1.apply(money, to))
-                .map(k -> k._2.apply(money, to))
-                .toEither(new Error("No exchange rate defined for " + keyFor(money.currency(), to)));
-    }
-
-    private boolean canConvertDirectly(Money money, Currency to) {
-        return exchangeRates.containsKey(keyFor(money.currency(), to));
-    }
-
-    private boolean canConvertThroughPivotCurrency(Money money, Currency to) {
-        return exchangeRates.containsKey(keyFor(pivotCurrency, money.currency()))
-                && exchangeRates.containsKey(keyFor(pivotCurrency, to));
-    }
-
-    private Money convertDirectly(Money money, Currency to) {
-        var exchangeRate = exchangeRates.getOrElse(keyFor(money.currency(), to), new ExchangeRate(0, to));
-        return new Money(money.amount() * exchangeRate.getRate(), to);
-    }
-
-    private Money convertThroughPivotCurrency(Money money, Currency to) {
-        return convertDirectly(convertDirectly(money, pivotCurrency), to);
-    }
-} 
+```csharp
+public Either<Error, NewBank> Add(NewExchangeRate exchangeRate) =>
+    this.IsPivotCurrency(exchangeRate.Currency)
+        ? Either<Error, NewBank>.Left(new Error(SameExchangeRateThanCurrency))
+        : Either<Error, NewBank>.Right(this.AddExchangeRate(exchangeRate));
+        
+public Either<Error, Money> Convert(Money money, Currency currency) =>
+    this.GetExchangeRate(money, currency)
+        .Map(rate => ConvertUsingExchangeRate(money, rate))
+        .Match(some => Either<Error, Money>.Right(some),
+            () => Either<Error, Money>.Left(new Error(FormatMissingExchangeRate(money.Currency, currency))));
 ```
 
-:large_blue_circle: Maybe a little hard to read `Map<Function2<Money, Currency, Boolean>, Function2<Money, Currency, Money>>`...
-We can create interfaces to improve readability.
+To this:
 
-```java
-public class NewBank {
-    private final Currency pivotCurrency;
-    private final Map<String, ExchangeRate> exchangeRates;
-
-    private final Map<CanConvert, Convert> convert = of(
-            (money, to) -> isSameCurrency(money.currency(), to), (money, to) -> money,
-            this::canConvertDirectly, this::convertDirectly,
-            this::canConvertThroughPivotCurrency, this::convertThroughPivotCurrency
-    );
-
-    ...
-    
-    private interface CanConvert extends Function2<Money, Currency, Boolean>  { }
-    private interface Convert extends Function2<Money, Currency, Money>  { }
-}
+```csharp
+public Either<Error, NewBank> Add(NewExchangeRate exchangeRate) =>
+    this.IsPivotCurrency(exchangeRate.Currency)
+        ? new Error(SameExchangeRateThanCurrency)
+        : this.AddExchangeRate(exchangeRate);
+        
+public Either<Error, Money> Convert(Money money, Currency currency) =>
+    this.GetExchangeRate(money, currency)
+        .Map(rate => ConvertUsingExchangeRate(money, rate))
+        .Match(Either<Error, Money>.Right,
+            () => new Error(FormatMissingExchangeRate(money.Currency, currency)));
 ```
 
 ### Parameterized Tests

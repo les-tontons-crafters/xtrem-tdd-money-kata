@@ -20,4 +20,6 @@ public struct NewExchangeRate
             : Either<Error, NewExchangeRate>.Left(new Error("Exchange rate should be greater than 0."));
 
     private static bool IsValidRate(double rate) => rate > 0;
+
+    public static NewExchangeRate Default(Currency currency) => new(currency, default);
 }
