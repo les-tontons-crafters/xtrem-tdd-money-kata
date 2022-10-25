@@ -1007,289 +1007,304 @@ public class NewBank
 }
 ```
 
-### Strangler on the `Portfolio`
+:large_blue_circle: Finally, let's remove the noise from our tests with a method to create a bank with multiple exchange
+rates, like we did previously.
 
-Now that we have defined our new bank implementation using T.D.D outside from the current production code we can
-intercept and refactor the `Portfolio`.
-Let's use another `Strangler`
-
-:red_circle: We start by a failing test / a new expectation
-
-```java
-class PortfolioTest {
-    private Bank bank;
-    private NewBank newBank;
-
-    @BeforeEach
-    void setup() {
-        bank = Bank.withExchangeRate(EUR, USD, 1.2)
-                .addExchangeRate(USD, KRW, 1100);
-
-        newBank = NewBank.withPivotCurrency(EUR)
-                .add(rateFor(1.2, USD))
-                .flatMap(n -> n.add(rateFor(1344, KRW)))
-                .get();
-    }
-
-    @Test
-    @DisplayName("5 USD + 10 USD = 15 USD")
-    void shouldAddMoneyInTheSameCurrency() {
-        var portfolio = portfolioWith(
-                dollars(5),
-                dollars(10)
-        );
-
-        assertThat(portfolio.evaluate(newBank, USD))
-                .containsOnRight(dollars(15));
-    }
-    ...
+```csharp
+public NewBankTest
+{
+    private const Currency PivotCurrency = Currency.EUR;
+    private readonly NewBank bank;
+    
+    private NewBank WithExchangeRates(params NewExchangeRate[] rates) =>
+        rates.Aggregate(this.bank, (runningValue, exchangeRate) => (NewBank) runningValue.Add(exchangeRate).Case);
+    
+    public NewBankTest() => this.bank = NewBank.WithPivotCurrency(PivotCurrency);
+    
+    public static IEnumerable<object[]> ExamplesForConvertThroughPivotCurrency =>
+        new List<object[]>
+        {
+            new object[] {10d.Dollars(), Currency.KRW, 11200d.KoreanWons()},
+            new object[] {(-1d).Dollars(), Currency.KRW, (-1120d).KoreanWons()},
+            new object[] {1000d.KoreanWons(), Currency.USD, 0.8928571428571427.Dollars()},
+        };
+    
+    public static IEnumerable<object[]> ExamplesForConvertThroughExchangeRate =>
+        new List<object[]>
+        {
+            new object[] {87d.Dollars(), Currency.EUR, 72.5d.Euros()},
+            new object[] {1009765d.KoreanWons(), Currency.EUR, 751.313244047619d.Euros()},
+            new object[] {10d.Euros(), Currency.USD, 12d.Dollars()},
+            new object[] {10d.Euros(), Currency.KRW, 13440d.KoreanWons()},
+        };
+    
+    [Theory]
+    [MemberData(nameof(ExamplesForConvertThroughExchangeRate))]
+    public void ConvertConvertThroughExchangeRate(Money money, Currency currency, Money expected) =>
+        DomainUtility.WithExchangeRates(
+                this.bank,
+                DomainUtility.CreateExchangeRate(Currency.USD, 1.2), 
+                DomainUtility.CreateExchangeRate(Currency.KRW, 1344))
+            .Convert(money, currency)
+            .Should()
+            .Be(expected);
+    
+    [Fact]
+    public void ConvertInDollarsFromEurosWithUpdatedRate() =>
+        DomainUtility.WithExchangeRates(
+                this.bank,
+                DomainUtility.CreateExchangeRate(Currency.USD, 1.1), 
+                DomainUtility.CreateExchangeRate(Currency.USD, 1.2))
+            .Convert(10d.Euros(), Currency.USD)
+            .Should()
+            .Be(12d.Dollars());
+    
+    [Theory]
+    [MemberData(nameof(ExamplesForConvertThroughPivotCurrency))]
+    public void ConvertThroughPivotCurrency(Money money, Currency currency, Money expected) =>
+        DomainUtility.WithExchangeRates(
+                this.bank,
+                DomainUtility.CreateExchangeRate(Currency.USD, 1.2), 
+                DomainUtility.CreateExchangeRate(Currency.KRW, 1344))
+            .Convert(money, currency)
+            .Should()
+            .Be(expected);
+}
+public static class DomainUtility
+{
+    public static NewBank WithExchangeRates(NewBank bank, params NewExchangeRate[] rates) =>
+        rates.Aggregate(bank, (runningValue, exchangeRate) => (NewBank) runningValue.Add(exchangeRate).Case);
 }
 ```
 
-Generate the new `evaluate` method:
-```java
-public Either<Error, Money> evaluate(NewBank bank, Currency to) {
-    return null;
+### Strangler on the `Portfolio`
+
+Now that we have defined our new bank implementation outside of the current production code, we can
+intercept and refactor the `Portfolio`.
+
+Let's use another `Strangler`.
+
+:red_circle: We start with a new expectation.
+
+```csharp
+public class PortfolioTest
+{
+    private readonly Bank bank;
+    private readonly NewBank newBank;
+
+    public PortfolioTest()
+    {
+        this.bank = Bank
+            .WithExchangeRates(
+                new ExchangeRate(Currency.EUR, Currency.USD, 1.2),
+                new ExchangeRate(Currency.USD, Currency.KRW, 1100));
+        this.newBank = DomainUtility.WithExchangeRates(
+            NewBank.WithPivotCurrency(Currency.EUR),
+            DomainUtility.CreateExchangeRate(Currency.USD, 1.2),
+            DomainUtility.CreateExchangeRate(Currency.KRW, 1344));
+    }
+    
+    [Fact(DisplayName = "5 USD + 10 USD = 15 USD")]
+    public void Add_ShouldAddMoneyInTheSameCurrency() =>
+        PortfolioWith(5d.Dollars(), 10d.Dollars())
+            .Evaluate(this.newBank, Currency.USD)
+            .Should()
+            .Be(15d.Dollars());
+}
+```
+
+Generate the new `Evaluate` method:
+
+```csharp
+public Portfolio Evaluate(NewBank bank, Currency currency)
+{   
+    throw new NotImplementedException();
 }
 ```
 
 :green_circle: We can duplicate internal methods to make it pass.
-Here we don't manipulate the same types, so it is easier to do it that way.
+As we don't manipulate the same types, it is easier to do it that way.
 
-```java
-public final class Portfolio {
-    private final Seq<Money> moneys;
+```csharp
+public class Portfolio
+{
+    private readonly Seq<Money> moneys;
 
-    public Portfolio() {
-        this.moneys = Vector.empty();
-    }
+    public Portfolio() => this.moneys = Seq<Money>.Empty;
 
-    private Portfolio(Seq<Money> moneys) {
-        this.moneys = moneys;
-    }
+    private Portfolio(Seq<Money> moneys) => this.moneys = moneys;
 
-    public Portfolio add(Money money) {
-        return new Portfolio(moneys.append(money));
-    }
+    private List<Either<Error, Money>> GetConvertedMoneys(NewBank bank, Currency currency) =>
+        this.moneys
+            .Select(money => bank.Convert(money, currency))
+            .ToList();
 
-    public Either<String, Money> evaluate(Bank bank, Currency toCurrency) {
-        var convertedMoneys = convertAllMoneys(bank, toCurrency);
+    private static bool ContainsFailure(IEnumerable<Either<Error, Money>> results) =>
+        results.Any(result => result.IsLeft);
 
-        return this.containsFailureOld(convertedMoneys)
-                ? left(toFailureOld(convertedMoneys))
-                : right(sumConvertedMoneyOld(convertedMoneys, toCurrency));
-    }
+    private string ToFailure(IEnumerable<Either<Error, Money>> results) =>
+        $"Missing exchange rate(s): {GetMissingRates(results)}";
 
-    private Seq<Either<String, Money>> convertAllMoneys(Bank bank, Currency toCurrency) {
-        return moneys.map(money -> bank.convert(money, toCurrency));
-    }
+    private static string GetMissingRates(IEnumerable<Either<Error, Money>> missingRates) => missingRates
+        .Match(_ => string.Empty, failure => $"[{failure.Message}]")
+        .Where(message => !string.IsNullOrEmpty(message))
+        .Aggregate((r1, r2) => $"{r1},{r2}");
 
-    private boolean containsFailureOld(Seq<Either<String, Money>> convertedMoneys) {
-        return convertedMoneys.exists(Either::isLeft);
-    }
+    private Money ToSuccess(IEnumerable<Either<Error, Money>> results, Currency currency) =>
+        new(results
+                .Where(result => result.IsRight)
+                .Sum(result => result.IfLeft(Money.Empty(currency)).Amount),
+            currency);
 
-    private String toFailureOld(Seq<Either<String, Money>> convertedMoneys) {
-        return convertedMoneys
-                .filter(Either::isLeft)
-                .map(e -> String.format("[%s]", e.getLeft()))
-                .mkString("Missing exchange rate(s): ", ",", "");
-    }
+    public Portfolio Add(Money money) => new(this.moneys.Add(money));
 
-    private Money sumConvertedMoneyOld(Seq<Either<String, Money>> convertedMoneys, Currency toCurrency) {
-        return new Money(convertedMoneys
-                .filter(Either::isRight)
-                .map(e -> e.getOrElse(new Money(0, toCurrency)))
-                .map(Money::amount)
-                .reduce(Double::sum), toCurrency);
-    }
-
-    private Seq<Either<Error, Money>> convertAllMoneys(NewBank bank, Currency toCurrency) {
-        return moneys.map(money -> bank.convert(money, toCurrency));
-    }
-
-    private boolean containsFailure(Seq<Either<Error, Money>> convertedMoneys) {
-        return convertedMoneys.exists(Either::isLeft);
-    }
-
-    private Error toFailure(Seq<Either<Error, Money>> convertedMoneys) {
-        return new Error(convertedMoneys
-                .filter(Either::isLeft)
-                .map(e -> String.format("[%s]", e.getLeft().message()))
-                .mkString("Missing exchange rate(s): ", ",", ""));
-    }
-
-    private Money sumConvertedMoney(Seq<Either<Error, Money>> convertedMoneys, Currency toCurrency) {
-        return new Money(convertedMoneys
-                .filter(Either::isRight)
-                .map(e -> e.getOrElse(new Money(0, toCurrency)))
-                .map(Money::amount)
-                .reduce(Double::sum), toCurrency);
-    }
-
-    public Either<Error, Money> evaluate(NewBank bank, Currency to) {
-        var convertedMoneys = convertAllMoneys(bank, to);
-
-        return containsFailure(convertedMoneys)
-                ? left(toFailure(convertedMoneys))
-                : right(sumConvertedMoney(convertedMoneys, to));
+    public Either<string, Money> Evaluate(NewBank bank, Currency currency)
+    {   
+        var results = this.GetConvertedMoneys(bank, currency);
+        return ContainsFailure(results)
+            ? Either<string, Money>.Left(this.ToFailure(results))
+            : Either<string, Money>.Right(this.ToSuccess(results, currency));
     }
 }
 ```
 
-Continue by calling the new `evaluate` method in each test:
-```java
-    @Test
-    @DisplayName("5 USD + 10 USD = 15 USD")
-    void shouldAddMoneyInTheSameCurrency() {
-        var portfolio = portfolioWith(
-                dollars(5),
-                dollars(10)
-        );
+Continue by calling the new `Evaluate` method in each test:
 
-        assertThat(portfolio.evaluate(newBank, USD))
-                .containsOnRight(dollars(15));
+```csharp
+    public class PortfolioTest
+{
+    private readonly Bank bank;
+    private readonly NewBank newBank;
+
+    public PortfolioTest()
+    {
+        this.bank = Bank
+            .WithExchangeRates(
+                new ExchangeRate(Currency.EUR, Currency.USD, 1.2),
+                new ExchangeRate(Currency.USD, Currency.KRW, 1100));
+        this.newBank = DomainUtility.WithExchangeRates(
+            NewBank.WithPivotCurrency(Currency.EUR),
+            DomainUtility.CreateExchangeRate(Currency.USD, 1.2),
+            DomainUtility.CreateExchangeRate(Currency.KRW, 1344));
     }
 
-    @Test
-    @DisplayName("5 USD + 10 EUR = 17 USD")
-    void shouldAddMoneyInDollarsAndEuros() {
-        var portfolio = portfolioWith(
-                dollars(5),
-                euros(10)
-        );
+    [Fact(DisplayName = "5 USD + 10 EUR = 17 USD")]
+    public void Add_ShouldAddMoneyInDollarAndEuro() =>
+        PortfolioWith(5d.Dollars(), 10d.Euros())
+            .Evaluate(this.newBank, Currency.USD)
+            .Should()
+            .Be(17d.Dollars());
 
-        assertThat(portfolio.evaluate(newBank, USD))
-                .containsOnRight(dollars(17));
+    [Fact(DisplayName = "1 USD + 1100 KRW = 2200 KRW")]
+    public void Add_ShouldAddMoneyInDollarAndKoreanWons() =>
+        PortfolioWith(1d.Dollars(), 1100d.KoreanWons())
+            .Evaluate(this.newBank, Currency.KRW)
+            .Should()
+            .Be(2200d.KoreanWons());
+
+    [Fact(DisplayName = "5 USD + 10 EUR + 4 EUR = 21.8 USD")]
+    public void Add_ShouldAddMoneyInDollarsAndMultipleAmountInEuros() =>
+        PortfolioWith(5d.Dollars(), 10d.Euros(), 4d.Euros())
+            .Evaluate(this.newBank, Currency.USD)
+            .Should()
+            .Be(21.8.Dollars());
+
+    [Fact(DisplayName = "Throws a MissingExchangeRatesException in case of missing exchange rates")]
+    public void Add_ShouldThrowAMissingExchangeRatesException()
+    {
+        PortfolioWith(1d.Euros(), 1d.Dollars(), 1d.KoreanWons())
+            .Evaluate(this.newBank, Currency.EUR)
+            .Should()
+            .Be("Missing exchange rate(s): [USD->EUR],[KRW->EUR]");
     }
 
-    @Test
-    @DisplayName("1 USD + 1100 KRW = 2200 KRW")
-    void shouldAddMoneyInDollarsAndKoreanWons() {
-        var portfolio = portfolioWith(
-                dollars(1),
-                koreanWons(1100)
-        );
+    [Fact(DisplayName = "5 USD + 10 USD = 15 USD")]
+    public void Add_ShouldAddMoneyInTheSameCurrency() =>
+        PortfolioWith(5d.Dollars(), 10d.Dollars())
+            .Evaluate(this.newBank, Currency.USD)
+            .Should()
+            .Be(15d.Dollars());
 
-        assertThat(portfolio.evaluate(newBank, KRW))
-                .containsOnRight(koreanWons(2200));
-    }
-
-    @Test
-    @DisplayName("5 USD + 10 EUR + 4 EUR = 21.8 USD")
-    void shouldAddMoneyInDollarsAndMultipleAmountInEuros() {
-        var portfolio = portfolioWith(
-                dollars(5),
-                euros(10),
-                euros(4)
-        );
-
-        assertThat(portfolio.evaluate(newBank, USD))
-                .containsOnRight(dollars(21.8));
-    }
+    private static Portfolio PortfolioWith(params Money[] moneys) =>
+        moneys.Aggregate(new Portfolio(), (portfolio, money) => portfolio.Add(money));
+}
 ```
 
-:red_circle: We detect a problem with one of the assertion:
-```java
-    @Test
-    @DisplayName("1 USD + 1100 KRW = 2200 KRW")
-    void shouldAddMoneyInDollarsAndKoreanWons() {
-        var portfolio = portfolioWith(
-                dollars(1),
-                koreanWons(1100)
-        );
+:red_circle: We detect a problem with one of our assertions.
 
-        assertThat(portfolio.evaluate(newBank, KRW))
-                .containsOnRight(koreanWons(2200));
-    }
+```csharp
+[Fact(DisplayName = "1 USD + 1100 KRW = 2200 KRW")]
+public void Add_ShouldAddMoneyInDollarAndKoreanWons() =>
+    PortfolioWith(1d.Dollars(), 1100d.KoreanWons())
+        .Evaluate(this.newBank, Currency.KRW)
+        .Should()
+        .Be(2200d.KoreanWons());
 ```
 
-:green_circle: The previous `Bank` implementation were not that good and with our new knowledge we can fix the assertion.
-```java
- @Test
- @DisplayName("1 USD + 1100 KRW = 2220 KRW")
- void shouldAddMoneyInDollarsAndKoreanWons() {
-     var portfolio = portfolioWith(
-             dollars(1),
-             koreanWons(1100)
-     );
+:green_circle: The previous implementation was not that good and, with our new knowledge, we can fix the assertion.
 
-     assertThat(portfolio.evaluate(newBank, KRW))
-             .containsOnRight(koreanWons(2220));
- }
+```csharp
+Fact(DisplayName = "1 USD + 1100 KRW = 2220 KRW")]
+public void Add_ShouldAddMoneyInDollarAndKoreanWons() =>
+    PortfolioWith(1d.Dollars(), 1100d.KoreanWons())
+        .Evaluate(this.newBank, Currency.KRW)
+        .Should()
+        .Be(2220d.KoreanWons());
 ```
 
 :red_circle: Let's work on the last test case.
-This one is more interesting, since we use the concept of `Pivot Currency` this test case is no longer valid...
+This one is more interesting.
+Since we use the concept of `Pivot Currency`, this test case is no longer valid...
 To make it valid we need to use an `empty` instance of a `Bank`.
-```java
-@Test
-@DisplayName("Return a failure result in case of missing exchange rates")
-void shouldReturnAFailingResultInCaseOfMissingExchangeRates() {
-    var portfolio = portfolioWith(
-            euros(1),
-            dollars(1),
-            koreanWons(1)
-    );
 
-    assertThat(portfolio.evaluate(newBank, EUR))
-            .containsOnLeft(error("Missing exchange rate(s): [USD->EUR],[KRW->EUR]"));
+```csharp
+[Fact(DisplayName = "Throws a MissingExchangeRatesException in case of missing exchange rates")]
+public void Add_ShouldThrowAMissingExchangeRatesException()
+{
+    PortfolioWith(1d.Euros(), 1d.Dollars(), 1d.KoreanWons())
+        .Evaluate(this.newBank, Currency.EUR)
+        .Should()
+        .Be("Missing exchange rate(s): [USD->EUR],[KRW->EUR]");
 }
 ```
 
 Let's adapt the test:
-```java
-    @Test
-    @DisplayName("Return a failure result in case of missing exchange rates")
-    void shouldReturnAFailingResultInCaseOfMissingExchangeRates() {
-        var portfolio = portfolioWith(
-                euros(1),
-                dollars(1),
-                koreanWons(1)
-        );
 
-        var emptyBank = withPivotCurrency(EUR);
-
-        assertThat(portfolio.evaluate(emptyBank, EUR))
-                .containsOnLeft(error("Missing exchange rate(s): [USD->EUR],[KRW->EUR]"));
-    }
+```csharp
+[Fact(DisplayName = "Throws a MissingExchangeRatesException in case of missing exchange rates")]
+public void Add_ShouldThrowAMissingExchangeRatesException()
+{
+    PortfolioWith(1d.Euros(), 1d.Dollars(), 1d.KoreanWons())
+        .Evaluate(NewBank.WithPivotCurrency(Currency.EUR), Currency.EUR)
+        .Should()
+        .Be("Missing exchange rate(s): [USD->EUR],[KRW->EUR]");
+}
 ```
 
-We detect a mistake in our `Bank` implementation, the errors are structured differently from the previous implementation:
-![Failure in missing rates](img/bank-redesign-missing-rates.png)
+:large_blue_circle: We can now clean our code!
 
-:green_circle: Change the `Bank` error instantiation:
-```java
-    public Either<Error, Money> convert(Money money, Currency to) {
-        return convert.find(canConvert -> canConvert._1.apply(money, to))
-                .map(k -> k._2.apply(money, to))
-                .toEither(new Error(keyFor(money.currency(), to)));
-    }
-```
-
-:large_blue_circle: We can now clean our code:
-- Remove the former `evaluate` method and its related ones
+- Remove the former `Evaluate` method and its related ones
 - Clean the `Portfolio` test to remove the `Bank` concept
+- Delete the former `Bank` implementation with its associated properties and tests, and also `ExchangeRate`
+- Rename `NewBank` to simply `Bank`, and `NewExchangeRate` to simply `ExchangeRate`
+  - Your IDE will rename tests for you
 
-![Safe delete](img/bank-redesign-safe-delete.png)
-
-- Delete the former `Bank` implementation
-  - Its associated properties and tests
-- Rename `NewBank` to simply `Bank`
-  - Your IDE will rename tests for you 
-
-![Rename Bank](img/bank-redesign-rename.png)
+![Rename Bank](img/BankRedesignRename.png)
 
 ### Reflect
-In this step we have used a lot of concepts discovered in previous steps:
+
+In this step, we have used a lot of concepts discovered in previous actions:
+
 - `Sprout Technique` to create our `Bank` implementation without impacting existing code
-- `Example mapping` outcome to design our tests and properties
+- `Example mapping` to design our tests and properties
 - `Property-Based Testing` as a driver for T.D.D
 - `Parameterized tests` to assert the behaviours of a pure function
 - `Strangler pattern` to finalize the `Sprout` and remove the former `Bank` implementation
 - `Fight primitive obsession` by:
-  - introducing an object for `Error` make it more clear our method signatures: `Bank` -> `Currency` -> `Either<Error, Money>`
+  - introducing an object for `Error` make it more clear our method signatures: `Bank` -> `Currency`
+    -> `Either<Error, Money>`
   - encapsulating rate business rules inside the `ExchangeRate` class
 
 ![What a journey](../../docs/img/bank-redesign.png)
 
-What a journey so far...
+What a journey so far!

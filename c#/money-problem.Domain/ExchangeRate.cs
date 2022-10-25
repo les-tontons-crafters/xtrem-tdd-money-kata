@@ -1,8 +1,27 @@
-﻿namespace money_problem.Domain;
+﻿using LanguageExt;
 
-public record ExchangeRate(Currency From, Currency To, double Rate)
+namespace money_problem.Domain;
+
+public struct ExchangeRate
 {
-    public bool IsSameExchange(ExchangeRate exchange) => this.From == exchange.From && this.To == exchange.To;
+    private ExchangeRate(Currency currency, double rate)
+    {
+        this.Currency = currency;
+        this.Rate = rate;
+    }
 
-    public static ExchangeRate Default(Currency from, Currency to) => new(from, to, default);
+    public Currency Currency { get; }
+
+    public double Rate { get; }
+
+    public static Either<Error, ExchangeRate> From(Currency currency, double rate) =>
+        IsValidRate(rate)
+            ? Either<Error, ExchangeRate>.Right(new ExchangeRate(currency, rate))
+            : Either<Error, ExchangeRate>.Left(new Error("Exchange rate should be greater than 0."));
+
+    private static bool IsValidRate(double rate) => rate > 0;
+
+    public static ExchangeRate Default(Currency currency) => new(currency, default);
+
+    public double GetReversedRate() => 1 / this.Rate;
 }

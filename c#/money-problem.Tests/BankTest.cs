@@ -5,12 +5,12 @@ using Xunit;
 
 namespace money_problem.Tests;
 
-public class NewBankTest
+public class BankTest
 {
     private const Currency PivotCurrency = Currency.EUR;
-    private readonly NewBank bank;
+    private readonly Bank bank;
 
-    public NewBankTest() => this.bank = NewBank.WithPivotCurrency(PivotCurrency);
+    public BankTest() => this.bank = Bank.WithPivotCurrency(PivotCurrency);
 
     public static IEnumerable<object[]> ExamplesForConvertThroughPivotCurrency =>
         new List<object[]>
@@ -32,29 +32,32 @@ public class NewBankTest
     [Theory]
     [MemberData(nameof(ExamplesForConvertThroughExchangeRate))]
     public void ConvertConvertThroughExchangeRate(Money money, Currency currency, Money expected) =>
-        this.bank
-            .Add(DomainUtility.CreateExchangeRate(Currency.USD, 1.2))
-            .Bind(bankWithExchanges => bankWithExchanges.Add(DomainUtility.CreateExchangeRate(Currency.KRW, 1344)))
-            .Map(bankWithExchanges => bankWithExchanges.Convert(money, currency))
+        DomainUtility.WithExchangeRates(
+                this.bank,
+                DomainUtility.CreateExchangeRate(Currency.USD, 1.2),
+                DomainUtility.CreateExchangeRate(Currency.KRW, 1344))
+            .Convert(money, currency)
             .Should()
             .Be(expected);
 
     [Fact]
     public void ConvertInDollarsFromEurosWithUpdatedRate() =>
-        this.bank
-            .Add(DomainUtility.CreateExchangeRate(Currency.USD, 1.1))
-            .Bind(bankWithExchanges => bankWithExchanges.Add(DomainUtility.CreateExchangeRate(Currency.USD, 1.2)))
-            .Map(bankWithExchanges => bankWithExchanges.Convert(10d.Euros(), Currency.USD))
+        DomainUtility.WithExchangeRates(
+                this.bank,
+                DomainUtility.CreateExchangeRate(Currency.USD, 1.1),
+                DomainUtility.CreateExchangeRate(Currency.USD, 1.2))
+            .Convert(10d.Euros(), Currency.USD)
             .Should()
             .Be(12d.Dollars());
 
     [Theory]
     [MemberData(nameof(ExamplesForConvertThroughPivotCurrency))]
     public void ConvertThroughPivotCurrency(Money money, Currency currency, Money expected) =>
-        this.bank
-            .Add(DomainUtility.CreateExchangeRate(Currency.USD, 1.2))
-            .Bind(bankWithExchanges => bankWithExchanges.Add(DomainUtility.CreateExchangeRate(Currency.KRW, 1344)))
-            .Map(bankWithExchanges => bankWithExchanges.Convert(money, currency))
+        DomainUtility.WithExchangeRates(
+                this.bank,
+                DomainUtility.CreateExchangeRate(Currency.USD, 1.2),
+                DomainUtility.CreateExchangeRate(Currency.KRW, 1344))
+            .Convert(money, currency)
             .Should()
             .Be(expected);
 }

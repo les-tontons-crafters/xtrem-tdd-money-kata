@@ -1,13 +1,7 @@
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using FluentAssertions;
-using FluentAssertions.Extensions;
 using FluentAssertions.LanguageExt;
-using LanguageExt;
 using money_problem.Domain;
 using Xunit;
-using Xunit.Sdk;
 
 namespace money_problem.Tests;
 
@@ -15,13 +9,11 @@ public class PortfolioTest
 {
     private readonly Bank bank;
 
-    public PortfolioTest()
-    {
-        this.bank = Bank
-            .WithExchangeRates(
-                new ExchangeRate(Currency.EUR, Currency.USD, 1.2), 
-                new ExchangeRate(Currency.USD, Currency.KRW, 1100));
-    }
+    public PortfolioTest() =>
+        this.bank = DomainUtility.WithExchangeRates(
+            Bank.WithPivotCurrency(Currency.EUR),
+            DomainUtility.CreateExchangeRate(Currency.USD, 1.2),
+            DomainUtility.CreateExchangeRate(Currency.KRW, 1344));
 
     [Fact(DisplayName = "5 USD + 10 EUR = 17 USD")]
     public void Add_ShouldAddMoneyInDollarAndEuro() =>
@@ -30,17 +22,17 @@ public class PortfolioTest
             .Should()
             .Be(17d.Dollars());
 
-    [Fact(DisplayName = "1 USD + 1100 KRW = 2200 KRW")]
+    [Fact(DisplayName = "1 USD + 1100 KRW = 2220 KRW")]
     public void Add_ShouldAddMoneyInDollarAndKoreanWons() =>
         PortfolioWith(1d.Dollars(), 1100d.KoreanWons())
             .Evaluate(this.bank, Currency.KRW)
             .Should()
-            .Be(2200d.KoreanWons());
+            .Be(2220d.KoreanWons());
 
     [Fact(DisplayName = "5 USD + 10 EUR + 4 EUR = 21.8 USD")]
     public void Add_ShouldAddMoneyInDollarsAndMultipleAmountInEuros() =>
         PortfolioWith(5d.Dollars(), 10d.Euros(), 4d.Euros())
-            .Evaluate(bank, Currency.USD)
+            .Evaluate(this.bank, Currency.USD)
             .Should()
             .Be(21.8.Dollars());
 
@@ -48,7 +40,7 @@ public class PortfolioTest
     public void Add_ShouldThrowAMissingExchangeRatesException()
     {
         PortfolioWith(1d.Euros(), 1d.Dollars(), 1d.KoreanWons())
-            .Evaluate(this.bank, Currency.EUR)
+            .Evaluate(Bank.WithPivotCurrency(Currency.EUR), Currency.EUR)
             .Should()
             .Be("Missing exchange rate(s): [USD->EUR],[KRW->EUR]");
     }
@@ -56,7 +48,7 @@ public class PortfolioTest
     [Fact(DisplayName = "5 USD + 10 USD = 15 USD")]
     public void Add_ShouldAddMoneyInTheSameCurrency() =>
         PortfolioWith(5d.Dollars(), 10d.Dollars())
-            .Evaluate(bank, Currency.USD)
+            .Evaluate(this.bank, Currency.USD)
             .Should()
             .Be(15d.Dollars());
 

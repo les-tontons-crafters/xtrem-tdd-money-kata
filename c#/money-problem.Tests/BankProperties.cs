@@ -1,60 +1,80 @@
-using System;
-using FluentAssertions;
-using FsCheck;
+﻿using FsCheck;
 using FsCheck.Xunit;
 using LanguageExt;
 using money_problem.Domain;
-using Xunit;
 
 namespace money_problem.Tests;
 
 public class BankProperties
 {
-    private const double Tolerance = 0.01;
-    private readonly Bank bank;
-
-    private readonly Seq<ExchangeRate> exchangeRates = new Seq<ExchangeRate>()
-        .Add(new ExchangeRate(Currency.EUR, Currency.USD, 1.0567))
-        .Add(new ExchangeRate(Currency.USD, Currency.EUR, 0.9466))
-        .Add(new ExchangeRate(Currency.USD, Currency.KRW, 1302.0811))
-        .Add(new ExchangeRate(Currency.KRW, Currency.USD, 0.00076801737))
-        .Add(new ExchangeRate(Currency.EUR, Currency.KRW, 1368.51779))
-        .Add(new ExchangeRate(Currency.KRW, Currency.EUR, 0.00073));
-
-    public BankProperties()
-    {
-        this.bank = this.exchangeRates.Aggregate(Bank.WithExchangeRates(),
-            (aggregatedBank, exchange) => aggregatedBank.AddExchangeRate(exchange));
-        Arb.Register<MoneyGenerator>();
-    }
+    [Property]
+    private Property CannotAddExchangeRateForThePivotCurrencyOfTheBank() =>
+        Prop.ForAll(
+            Arb.From<Currency>(),
+            GetValidRates(),
+            (currency, rate) =>
+                AddShouldReturnErrorForSameCurrencyAsPivot(currency, rate,
+                    Bank.SameExchangeRateThanCurrency));
 
     [Property]
-    private Property ConvertInSameCurrencyShouldReturnOriginalMoney(Money originalAmount) =>
-        (originalAmount == this.bank.Convert(originalAmount, originalAmount.Currency)).ToProperty();
+    private Property CanAddExchangeRateForDifferentCurrencyThanPivot() =>
+        Prop.ForAll(
+            Arb.From<Currency>(),
+            Arb.From<Currency>(),
+            GetValidRates(),
+            (pivot, currency, rate) =>
+                AddShouldReturnBankForExchangeRateForDifferentCurrencyThanPivot(pivot, currency, rate)
+                    .When(pivot != currency));
 
     [Property]
-    private Property RoundTripping(Money originalAmount, Currency currency) =>
-        this.IsRoundTripConversionSuccessful(originalAmount, currency)
-            .ToProperty();
+    private Property CanUpdateExchangeRateForAnyCurrencyDifferentThanPivot() =>
+        Prop.ForAll(
+            Arb.From<Currency>(),
+            Arb.From<Currency>(),
+            GetValidRates(),
+            (pivot, currency, rate) => AddShouldReturnBankWhenUpdatingExchangeRate(pivot, currency, rate)
+                .When(pivot != currency));
 
-    private bool IsRoundTripConversionSuccessful(Money originalAmount, Currency currency) =>
-        this.bank
-            .Convert(originalAmount, currency)
-            .Bind(convertedMoney => this.bank.Convert(convertedMoney, originalAmount.Currency))
-            .Map(convertedAmount => this.VerifyTolerance(originalAmount, convertedAmount))
-            .IfLeft(false);
+    [Property]
+    private Property CannotConvertToUnknownCurrency() =>
+        Prop.ForAll(Arb.From<Currency>(),
+            Arb.From<Currency>(),
+            MoneyGenerator.GenerateMoneys(),
+            (pivot, currency, money) => ConvertShouldReturnErrorWhenCurrencyIsUnknown(pivot, money, currency)
+                .When(pivot != currency && money.Currency != currency));
 
-    [Fact(DisplayName = "Money { Amount = 0,9632981371199433, Currency = USD }, KRW")]
-    public void RoundTripError()
-    {
-        var originalAmount = new Money(0.9632981371199433, Currency.USD);
-        this.IsRoundTripConversionSuccessful(originalAmount, Currency.KRW)
-            .Should()
-            .BeTrue();
-    }
+    [Property]
+    private Property ConvertToSameCurrencyReturnSameMoney() =>
+        Prop.ForAll(
+            Arb.From<Currency>(),
+            MoneyGenerator.GenerateMoneys(),
+            (pivot, money) => ConvertShouldReturnMoneyWhenConvertingToSameCurrency(pivot, money)
+                .When(pivot != money.Currency));
 
-    private bool VerifyTolerance(Money originalAmount, Money convertedAmount) =>
-        Math.Abs(originalAmount.Amount - convertedAmount.Amount) <= GetTolerance(originalAmount);
+    private static bool ConvertShouldReturnMoneyWhenConvertingToSameCurrency(Currency pivot, Money money) =>
+        Bank.WithPivotCurrency(pivot).Convert(money, money.Currency) == money;
 
-    private double GetTolerance(Money originalMoney) => Math.Abs(originalMoney.Amount * Tolerance);
+    private static bool ConvertShouldReturnErrorWhenCurrencyIsUnknown(Currency pivot, Money money, Currency currency) =>
+        Bank.WithPivotCurrency(pivot).Convert(money, currency) ==
+        Either<Error, Money>.Left(new Error($"{money.Currency}->{currency}"));
+
+    private static bool AddShouldReturnBankWhenUpdatingExchangeRate(Currency pivot, Currency currency, double rate) =>
+        Bank.WithPivotCurrency(pivot)
+            .Add(DomainUtility.CreateExchangeRate(currency, rate))
+            .Map(bank => bank.Add(DomainUtility.CreateExchangeRate(currency, rate + 1)))
+            .IsRight;
+
+    private static Arbitrary<double> GetValidRates() => Arb.From<double>().MapFilter(_ => _, rate => rate > 0);
+
+    private static bool AddShouldReturnBankForExchangeRateForDifferentCurrencyThanPivot(Currency pivot,
+        Currency currency, double rate) =>
+        Bank
+            .WithPivotCurrency(pivot)
+            .Add(DomainUtility.CreateExchangeRate(currency, rate))
+            .IsRight;
+
+    private static bool AddShouldReturnErrorForSameCurrencyAsPivot(Currency currency, double rate, string message) =>
+        Bank
+            .WithPivotCurrency(currency)
+            .Add(DomainUtility.CreateExchangeRate(currency, rate)) == Either<Error, Bank>.Left(new Error(message));
 }

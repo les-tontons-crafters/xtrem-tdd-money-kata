@@ -5,7 +5,7 @@ using money_problem.Domain;
 
 namespace money_problem.Tests;
 
-public class NewExchangeRateProperties
+public class ExchangeRateProperties
 {
     [Property]
     public Property CannotUseNegativeDoubleOrZeroAsExchangeRate() =>
@@ -27,11 +27,11 @@ public class NewExchangeRateProperties
     private static Arbitrary<double> GetInvalidRates() => Arb.From<double>().MapFilter(_ => _, rate => rate <= 0);
 
     private static bool ExchangeRateShouldReturnRate(Currency currency, double rate) =>
-        NewExchangeRate.From(currency, rate)
+        ExchangeRate.From(currency, rate)
             .Map(value => value.Currency == currency && value.Rate == rate)
             .IfLeft(false);
 
     private static bool ExchangeRateShouldReturnError(Currency currency, double rate, string message) =>
-        NewExchangeRate.From(currency, rate) ==
-        Either<Error, NewExchangeRate>.Left(new Error(message));
+        ExchangeRate.From(currency, rate) ==
+        Either<Error, ExchangeRate>.Left(new Error(message));
 }
