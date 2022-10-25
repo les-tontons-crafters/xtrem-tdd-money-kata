@@ -42,12 +42,22 @@ public class NewBank
             return GetExchangeRateForSameCurrency(currency);
         }
 
+        if (this.IsPivotCurrency(currency))
+        {
+            return this.FindExchangeRate(money.Currency).Bind(this.ReverseExchangeRate);
+        }
+
         var exchangeSource = this.FindExchangeRate(money.Currency);
         var exchangeDestination = this.FindExchangeRate(currency);
         return this.ShouldConvertThroughPivotCurrency(money.Currency, currency)
             ? ComputeExchangeRate(exchangeSource, exchangeDestination)
             : exchangeDestination;
     }
+
+    private Option<NewExchangeRate> ReverseExchangeRate(NewExchangeRate exchange) =>
+        NewExchangeRate
+            .From(this.pivotCurrency, exchange.GetReversedRate())
+            .Match(Some, _ => Option<NewExchangeRate>.None);
 
     private static Option<NewExchangeRate> GetExchangeRateForSameCurrency(Currency currency) =>
         NewExchangeRate
@@ -61,14 +71,12 @@ public class NewBank
         Option<NewExchangeRate> destination) =>
         destination
             .Bind(exchange => source
-                .Map(sourceExchange => GetReversedRate(sourceExchange.Rate))
+                .Map(sourceExchange => sourceExchange.GetReversedRate())
                 .Map(rate => rate * exchange.Rate)
                 .Map(rate => new Tuple<Currency, double>(exchange.Currency, rate)))
             .Map(exchange => NewExchangeRate
                 .From(exchange.Item1, exchange.Item2)
                 .IfLeft(_ => NewExchangeRate.Default(exchange.Item1)));
-
-    private static double GetReversedRate(double rate) => 1 / rate;
 
     private static Money ConvertUsingExchangeRate(Money money, NewExchangeRate exchangeRate) =>
         new(money.Amount * exchangeRate.Rate, exchangeRate.Currency);

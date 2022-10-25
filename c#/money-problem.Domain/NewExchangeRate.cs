@@ -22,4 +22,6 @@ public struct NewExchangeRate
     private static bool IsValidRate(double rate) => rate > 0;
 
     public static NewExchangeRate Default(Currency currency) => new(currency, default);
+
+    public double GetReversedRate() => 1 / this.Rate;
 }

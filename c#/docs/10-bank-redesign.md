@@ -804,12 +804,17 @@ public class NewBank
     private static Option<NewExchangeRate> ComputeExchangeRate(Option<NewExchangeRate> source, Option<NewExchangeRate> destination) =>
         destination
             .Bind(exchange => source
-                .Map(sourceExchange => GetReversedRate(sourceExchange.Rate))
+                .Map(sourceExchange => sourceExchange.GetReversedRate())
                 .Map(rate => rate * exchange.Rate)
                 .Map(rate => new Tuple<Currency, double>(exchange.Currency, rate)))
             .Map(exchange => NewExchangeRate
                 .From(exchange.Item1, exchange.Item2)
                 .IfLeft(_ => NewExchangeRate.Default(exchange.Item1)));
+}
+
+public struct NewExchangeRate
+{
+     public double GetReversedRate() => 1 / this.Rate;
 }
 ```
 
@@ -846,107 +851,170 @@ public Either<Error, Money> Convert(Money money, Currency currency) =>
 ```
 
 ### Parameterized Tests
+
 Are we confident enough with those `properties` and `unit tests`?
 
 We may add some other examples to increase our confidence.
-We can use `parameterized tests` to make it easiest to use different examples for the same behavior. 
-```xml
-<dependency>
-    <groupId>org.junit.jupiter</groupId>
-    <artifactId>junit-jupiter-params</artifactId>
-    <version>${junit.version}</version>
-    <scope>test</scope>
-</dependency>
+We can use `parameterized tests` to make it easiest to use different examples for the same behaviour.
+
+:large_blue_circle: Let's replace a `Fact` by a `Theory`.
+
+```csharp
+public static IEnumerable<object[]> ExamplesForConvertThroughPivotCurrency => 
+    new List<object[]>
+    {
+        new object[] { 10d.Dollars(), Currency.KRW, 11200d.KoreanWons() },
+    };
+
+[Theory]
+[MemberData(nameof(ExamplesForConvertThroughPivotCurrency))]
+public void ConvertThroughPivotCurrency(Money money, Currency currency, Money expected) =>
+    NewBank
+        .WithPivotCurrency(Currency.EUR)
+        .Add(DomainUtility.CreateExchangeRate(Currency.USD, 1.2))
+        .Bind(bank => bank.Add(DomainUtility.CreateExchangeRate(Currency.KRW, 1344)))
+        .Map(bank => bank.Convert(money, currency))
+        .Should()
+        .Be(expected);
 ```
 
-Start by changing an existing test to parameterized test:
-```java
-    private static Stream<Arguments> examplesForConvertingThroughPivotCurrency() {
-        return Stream.of(
-                Arguments.of(dollars(10), KRW, koreanWons(11200))
-        );
-    }
+`MemberData` provides test data for our test.
+Observe your `Test Result`. It is pretty readable 👌
 
-    @ParameterizedTest
-    @MethodSource("examplesForConvertingThroughPivotCurrency")
-    void convertThroughPivotCurrency(Money money, Currency to, Money expectedResult) {
-        assertThat(bank.add(rateFor(1.2, USD))
-                .flatMap(b -> b.add(rateFor(1344, KRW)))
-                .flatMap(newBank -> newBank.convert(money, to)))
-                .containsOnRight(expectedResult);
-    }
+![Output of parameterized tests](img/BankRedesignExample.png)
+
+Parameterized tests are ideal for testing [pure functions](https://xtrem-tdd.netlify.app/Flavours/pure-function).
+
+> Avoid the trap of putting conditions in this kind of test. If you are tempted to do so at one point, it means you have
+> 2 test cases, so split it.
+
+:large_blue_circle: Add other examples:
+
+```csharp
+public static IEnumerable<object[]> ExamplesForConvertThroughPivotCurrency => 
+    new List<object[]>
+    {
+        new object[] { 10d.Dollars(), Currency.KRW, 11200d.KoreanWons() },
+        new object[] { (-1d).Dollars(), Currency.KRW, (-1120d).KoreanWons() },
+        new object[] { 1000d.KoreanWons(), Currency.USD, 0.8928571428571427.Dollars() },
+    };
 ```
 
-We use `@MethodSource` as source for our test. Observe your `Test Result`, it is pretty readable right 👌
-![Output of parameterized tests](img/bank-redesign-example.png)
-
-Parameterized tests are really ideal to test pure functions.
-
-> Avoid the trap of putting conditions in this kind of tests. If at one point your tempted to do so, it means you have 2 test cases, so split it.
-
-Add other examples:
-```java
-private static Stream<Arguments> examplesForConvertingThroughPivotCurrency() {
-    return Stream.of(
-            Arguments.of(dollars(10), KRW, koreanWons(11200)),
-            Arguments.of(dollars(-1), KRW, koreanWons(-1120)),
-            Arguments.of(koreanWons(39_345.50), USD, dollars(35.129910714285714)),
-            Arguments.of(koreanWons(1000), USD, dollars(0.8928571428571427))
-    );
-}
-```
 :large_blue_circle: Centralize conversion tests in parameterized tests:
-```java
-class NewBankTest {
-    public static final Currency PIVOT_CURRENCY = EUR;
-    private final Bank bank = Bank.withPivotCurrency(PIVOT_CURRENCY);
 
-    private static Stream<Arguments> examplesOfDirectConversion() {
-        return Stream.of(
-                of(dollars(87), EUR, euros(72.5)),
-                of(koreanWons(1_009_765), EUR, euros(751.313244047619)),
-                of(euros(10), USD, dollars(12)),
-                of(euros(543.98), USD, dollars(652.776))
-        );
-    }
+```csharp
+public class NewBankTest
+{
+    private const Currency PivotCurrency = Currency.EUR;
+    private readonly NewBank bank;
 
-    @ParameterizedTest
-    @MethodSource("examplesOfDirectConversion")
-    void convertDirectly(Money money, Currency to, Money expectedResult) {
-        assertConversion(money, to, expectedResult);
-    }
+    public NewBankTest() => this.bank = NewBank.WithPivotCurrency(PivotCurrency);
 
-    private static Stream<Arguments> examplesOfConversionThroughPivotCurrency() {
-        return Stream.of(
-                of(dollars(10), KRW, koreanWons(11200)),
-                of(dollars(-1), KRW, koreanWons(-1120)),
-                of(koreanWons(39_345.50), USD, dollars(35.129910714285714)),
-                of(koreanWons(1000), USD, dollars(0.8928571428571427))
-        );
-    }
+    public static IEnumerable<object[]> ExamplesForConvertThroughPivotCurrency =>
+        new List<object[]>
+        {
+            new object[] {10d.Dollars(), Currency.KRW, 11200d.KoreanWons()},
+            new object[] {(-1d).Dollars(), Currency.KRW, (-1120d).KoreanWons()},
+            new object[] {1000d.KoreanWons(), Currency.USD, 0.8928571428571427.Dollars()},
+        };
 
-    @ParameterizedTest
-    @MethodSource("examplesOfConversionThroughPivotCurrency")
-    void convertThroughPivotCurrency(Money money, Currency to, Money expectedResult) {
-        assertConversion(money, to, expectedResult);
-    }
+    [Fact]
+    public void ConvertInDollarsFromEuros() =>
+        this.bank
+            .Add(DomainUtility.CreateExchangeRate(Currency.USD, 1.2))
+            .Map(bankWithExchanges => bankWithExchanges.Convert(10d.Euros(), Currency.USD))
+            .Should()
+            .Be(12d.Dollars());
 
-    private void assertConversion(Money money, Currency to, Money expectedResult) {
-        assertThat(bank.add(rateFor(1.2, USD))
-                .flatMap(b -> b.add(rateFor(1344, KRW)))
-                .flatMap(newBank -> newBank.convert(money, to)))
-                .containsOnRight(expectedResult);
-    }
+    [Fact]
+    public void ConvertInDollarsFromEurosWithUpdatedRate() =>
+        this.bank
+            .Add(DomainUtility.CreateExchangeRate(Currency.USD, 1.1))
+            .Bind(bankWithExchanges => bankWithExchanges.Add(DomainUtility.CreateExchangeRate(Currency.USD, 1.2)))
+            .Map(bankWithExchanges => bankWithExchanges.Convert(10d.Euros(), Currency.USD))
+            .Should()
+            .Be(12d.Dollars());
+
+    [Theory]
+    [MemberData(nameof(ExamplesForConvertThroughPivotCurrency))]
+    public void ConvertThroughPivotCurrency(Money money, Currency currency, Money expected) =>
+        this.bank
+            .Add(DomainUtility.CreateExchangeRate(Currency.USD, 1.2))
+            .Bind(bankWithExchanges => bankWithExchanges.Add(DomainUtility.CreateExchangeRate(Currency.KRW, 1344)))
+            .Map(bankWithExchanges => bankWithExchanges.Convert(money, currency))
+            .Should()
+            .Be(expected);
 }
 ```
 
-> We have chosen to keep the separation between direct conversion and conversion through pivot currency to make it clear when a test fails why it fails.
+> We have chosen to keep the separation between direct conversion and conversion through pivot currency to make it clear
+> when a test fails why it fails.
+
+:large_blue_circle: Let's add another method for direct conversions.
+
+```csharp
+public static IEnumerable<object[]> ExamplesForConvertThroughExchangeRate =>
+    new List<object[]>
+    {
+        new object[] {87d.Dollars(), Currency.EUR, 72.5d.Euros()},
+        new object[] {1009765d.KoreanWons(), Currency.EUR, 751.313244047619d.Euros()},
+        new object[] {10d.Euros(), Currency.USD, 12d.Dollars()},
+        new object[] {10d.Euros(), Currency.KRW, 13440d.KoreanWons()},
+    };
+    
+[Theory]
+[MemberData(nameof(ExamplesForConvertThroughExchangeRate))]
+public void ConvertConvertThroughExchangeRate(Money money, Currency currency, Money expected) =>
+    this.bank
+        .Add(DomainUtility.CreateExchangeRate(Currency.USD, 1.2))
+        .Bind(bankWithExchanges => bankWithExchanges.Add(DomainUtility.CreateExchangeRate(Currency.KRW, 1344)))
+        .Map(bankWithExchanges => bankWithExchanges.Convert(money, currency))
+        .Should()
+        .Be(expected);
+```
+
+:red_circle: Uh-oh... It looks like adding more values revealed missing behaviours.
+In this case, converting from currency to pivot currency doesn't work because we did not handle a reversed rate.
+
+We were lucky enough to see that **thanks to our test suite** before going to production.
+
+```csharp
+public class NewBank
+{
+    private Option<NewExchangeRate> GetExchangeRate(Money money, Currency currency)
+    {
+        if (money.HasCurrency(currency))
+        {
+            return GetExchangeRateForSameCurrency(currency);
+        }
+
+        if (this.IsPivotCurrency(currency))
+        {
+            return this.FindExchangeRate(money.Currency).Bind(this.ReverseExchangeRate);
+        }
+
+        var exchangeSource = this.FindExchangeRate(money.Currency);
+        var exchangeDestination = this.FindExchangeRate(currency);
+        return this.ShouldConvertThroughPivotCurrency(money.Currency, currency)
+            ? ComputeExchangeRate(exchangeSource, exchangeDestination)
+            : exchangeDestination;
+    }
+    
+    private Option<NewExchangeRate> ReverseExchangeRate(NewExchangeRate exchange) =>
+    NewExchangeRate
+        .From(this.pivotCurrency, exchange.GetReversedRate())
+        .Match(Some, _ => Option<NewExchangeRate>.None);
+}
+```
 
 ### Strangler on the `Portfolio`
-Now that we have defined our new bank implementation using T.D.D outside from the current production code we can intercept and refactor the `Portfolio`.
+
+Now that we have defined our new bank implementation using T.D.D outside from the current production code we can
+intercept and refactor the `Portfolio`.
 Let's use another `Strangler`
 
 :red_circle: We start by a failing test / a new expectation
+
 ```java
 class PortfolioTest {
     private Bank bank;
