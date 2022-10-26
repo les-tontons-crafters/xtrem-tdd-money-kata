@@ -72,15 +72,15 @@ We will work in small iterations
 ### Iterations
 In this workshop, we will make those iterations in this order:
 
-1. [Let's Mutate Some Code](facilitation/1.mutation-testing.md)
-2. [Implement Portfolio](facilitation/2.portfolio.md)
-3. [Fight Primitive Obsession](facilitation/3.no-primitive-types.md)
-4. [No For Loops](facilitation/4.no-for-loops.md)
-5. [Use Only Immutable Types](facilitation/5.only-immutable-types.md)
-6. [Avoid Exceptions](facilitation/6.no-exception-authorized.md)
-7. [Use an existing monad](facilitation/7.use-existing-monad.md)
-8. [Property-Based Testing to challenge our Domain Model](facilitation/8.bank-properties.md)
-9. [Shared understanding on the Bank with Example Mapping](facilitation/9.bank-example-mapping.md)
+1. [Let's Mutate Some Code](facilitation/01.mutation-testing.md)
+2. [Implement Portfolio](facilitation/02.portfolio.md)
+3. [Fight Primitive Obsession](facilitation/03.no-primitive-types.md)
+4. [No For Loops](facilitation/04.no-for-loops.md)
+5. [Use Only Immutable Types](facilitation/05.only-immutable-types.md)
+6. [Avoid Exceptions](facilitation/06.no-exception-authorized.md)
+7. [Use an existing monad](facilitation/07.use-existing-monad.md)
+8. [Property-Based Testing to challenge our Domain Model](facilitation/08.bank-properties.md)
+9. [Shared understanding on the Bank with Example Mapping](facilitation/09.bank-example-mapping.md)
 10. [Redesign the Bank](facilitation/10.redesign-bank.md)
 
 ### Solution
