@@ -20,6 +20,7 @@
         <vavr.version>0.10.4</vavr.version>
         <assertj-vavr.version>0.4.2</assertj-vavr.version>
         <junit-quickcheck.version>1.0</junit-quickcheck.version>
+        <cucumber.version>7.8.1</cucumber.version>
     </properties>
 
     <build>
@@ -105,6 +106,18 @@
             <groupId>com.pholser</groupId>
             <artifactId>junit-quickcheck-generators</artifactId>
             <version>${junit-quickcheck.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-java</artifactId>
+            <version>${cucumber.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-junit</artifactId>
+            <version>${cucumber.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
