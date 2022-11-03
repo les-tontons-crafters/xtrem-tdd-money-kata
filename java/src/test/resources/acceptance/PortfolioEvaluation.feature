@@ -8,8 +8,8 @@ Feature: Portfolio evaluation
 
   Scenario: Evaluate in EUR
     Given an existing customer
-    And he/she adds 5678.89 USD on his/her portfolio
-    And he/she adds 5674567.245 KRW on his/her portfolio
-    And he/she adds 9432 USD on his/her portfolio
-    And he/she adds 4989.67 EUR on his/her portfolio
-    When he/she evaluates his/her portfolio in EUR the result should be 21804.23 EUR
+    And they add 5678.89 USD on their portfolio
+    And they add 5674567.245 KRW on their portfolio
+    And they add 9432 USD on their portfolio
+    And they add 4989.67 EUR on their portfolio
+    When they evaluate their portfolio in EUR the amount should be closed to 21804.227
