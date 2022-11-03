@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
@@ -13,24 +13,25 @@
         <maven.compiler.target>17</maven.compiler.target>
         <maven.compiler.version>3.10.1</maven.compiler.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <junit.version>5.8.2</junit.version>
+        <junit.version>5.9.0</junit.version>
         <assertJ.version>3.22.0</assertJ.version>
         <pitest.version>1.8.0</pitest.version>
         <pitest.junit5.version>0.15</pitest.junit5.version>
         <vavr.version>0.10.4</vavr.version>
         <assertj-vavr.version>0.4.2</assertj-vavr.version>
         <junit-quickcheck.version>1.0</junit-quickcheck.version>
+        <slf4j.version>2.0.3</slf4j.version>
     </properties>
 
     <build>
         <plugins>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.1</version>
+                <version>2.22.2</version>
                 <configuration>
                     <includes>
-                        <include>%regex[.*Properties.*]</include>
                         <include>%regex[.*Test.*]</include>
+                        <include>%regex[.*Properties.*]</include>
                     </includes>
                 </configuration>
             </plugin>
@@ -72,6 +73,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
             <version>${junit.version}</version>
@@ -106,6 +113,16 @@
             <artifactId>junit-quickcheck-generators</artifactId>
             <version>${junit-quickcheck.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>${slf4j.version}</version>
         </dependency>
     </dependencies>
 </project>
