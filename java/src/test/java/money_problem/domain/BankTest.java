@@ -24,12 +24,6 @@ class BankTest {
         );
     }
 
-    @ParameterizedTest
-    @MethodSource("examplesOfDirectConversion")
-    void convertDirectly(Money money, Currency to, Money expectedResult) {
-        assertConversion(money, to, expectedResult);
-    }
-
     private static Stream<Arguments> examplesOfConversionThroughPivotCurrency() {
         return Stream.of(
                 of(dollars(10), KRW, koreanWons(11200)),
@@ -37,6 +31,12 @@ class BankTest {
                 of(koreanWons(39_345.50), USD, dollars(35.129910714285714)),
                 of(koreanWons(1000), USD, dollars(0.8928571428571427))
         );
+    }
+
+    @ParameterizedTest
+    @MethodSource("examplesOfDirectConversion")
+    void convertDirectly(Money money, Currency to, Money expectedResult) {
+        assertConversion(money, to, expectedResult);
     }
 
     @ParameterizedTest
