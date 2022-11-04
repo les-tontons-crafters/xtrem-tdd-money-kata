@@ -1,4 +1,4 @@
-package money_problem.usecases;
+package money_problem.usecases.common;
 
 public record UseCaseError(String message) {
     public static UseCaseError error(String message) {

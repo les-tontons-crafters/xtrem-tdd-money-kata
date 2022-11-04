@@ -1,4 +1,4 @@
-package money_problem.usecases;
+package money_problem.usecases.common;
 
 import io.vavr.control.Either;
 

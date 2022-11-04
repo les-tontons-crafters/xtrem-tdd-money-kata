@@ -4,14 +4,14 @@ import io.vavr.control.Either;
 import money_problem.domain.Bank;
 import money_problem.domain.Error;
 import money_problem.domain.ExchangeRate;
-import money_problem.usecases.Success;
-import money_problem.usecases.UseCase;
-import money_problem.usecases.UseCaseError;
+import money_problem.usecases.common.Success;
+import money_problem.usecases.common.UseCase;
+import money_problem.usecases.common.UseCaseError;
 import money_problem.usecases.ports.BankRepository;
 
 import static money_problem.domain.ExchangeRate.from;
-import static money_problem.usecases.Success.emptySuccess;
-import static money_problem.usecases.UseCaseError.error;
+import static money_problem.usecases.common.Success.emptySuccess;
+import static money_problem.usecases.common.UseCaseError.error;
 
 public class AddExchangeRateUseCase implements UseCase<AddExchangeRate, Void> {
     private final BankRepository bankRepository;

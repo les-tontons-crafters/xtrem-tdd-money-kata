@@ -1,4 +1,4 @@
-package money_problem.usecases;
+package money_problem.usecases.common;
 
 public record Success<T>() {
     public static Success<Void> emptySuccess() {
