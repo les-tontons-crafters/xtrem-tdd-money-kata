@@ -1,6 +1,11 @@
-package money_problem.domain;
+package money_problem.unit.domain;
 
 import io.vavr.collection.Vector;
+import money_problem.domain.Currency;
+import money_problem.domain.Error;
+import money_problem.domain.ExchangeRate;
+import money_problem.domain.Money;
+import money_problem.domain.Portfolio;
 
 import static money_problem.domain.Currency.*;
 import static money_problem.domain.ExchangeRate.from;
@@ -31,7 +36,7 @@ public class DomainUtility {
         return from(rate, currency).get();
     }
 
-    public static Error error(String message) {
+    public static money_problem.domain.Error error(String message) {
         return new Error(message);
     }
 }

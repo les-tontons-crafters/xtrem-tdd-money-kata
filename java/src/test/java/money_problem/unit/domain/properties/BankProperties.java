@@ -1,4 +1,4 @@
-package money_problem.domain.properties;
+package money_problem.unit.domain.properties;
 
 import com.pholser.junit.quickcheck.From;
 import com.pholser.junit.quickcheck.Property;
@@ -6,10 +6,10 @@ import com.pholser.junit.quickcheck.generator.InRange;
 import com.pholser.junit.quickcheck.runner.JUnitQuickcheck;
 import money_problem.domain.Currency;
 import money_problem.domain.Money;
+import money_problem.unit.domain.DomainUtility;
 import org.junit.runner.RunWith;
 
 import static money_problem.domain.Bank.withPivotCurrency;
-import static money_problem.domain.DomainUtility.*;
 import static org.assertj.vavr.api.VavrAssertions.assertThat;
 import static org.junit.Assume.assumeTrue;
 
@@ -19,21 +19,21 @@ public class BankProperties {
     @Property
     public void canNotAddAnExchangeRateForThePivotCurrencyOfTheBank(
             Currency pivotCurrency,
-            @InRange(min = MINIMUM_RATE, max = MAXIMUM_RATE) double validRate) {
+            @InRange(min = DomainUtility.MINIMUM_RATE, max = DomainUtility.MAXIMUM_RATE) double validRate) {
         assertThat(withPivotCurrency(pivotCurrency)
-                .add(rateFor(validRate, pivotCurrency)))
-                .containsOnLeft(error("Can not add an exchange rate for the pivot currency"));
+                .add(DomainUtility.rateFor(validRate, pivotCurrency)))
+                .containsOnLeft(DomainUtility.error("Can not add an exchange rate for the pivot currency"));
     }
 
     @Property
     public void canAddAnExchangeRateForAnyCurrencyDifferentFromThePivot(
             Currency pivotCurrency,
             Currency otherCurrency,
-            @InRange(min = MINIMUM_RATE, max = MAXIMUM_RATE) double validRate) {
+            @InRange(min = DomainUtility.MINIMUM_RATE, max = DomainUtility.MAXIMUM_RATE) double validRate) {
         notPivotCurrency(pivotCurrency, otherCurrency);
 
         assertThat(withPivotCurrency(pivotCurrency)
-                .add(rateFor(validRate, otherCurrency)))
+                .add(DomainUtility.rateFor(validRate, otherCurrency)))
                 .isRight();
     }
 
@@ -41,11 +41,11 @@ public class BankProperties {
     public void canUpdateAnExchangeRateForAnyCurrencyDifferentFromThePivot(
             Currency pivotCurrency,
             Currency otherCurrency,
-            @InRange(min = MINIMUM_RATE, max = MAXIMUM_RATE) double validRate) {
+            @InRange(min = DomainUtility.MINIMUM_RATE, max = DomainUtility.MAXIMUM_RATE) double validRate) {
         notPivotCurrency(pivotCurrency, otherCurrency);
 
-        var exchangeRate = rateFor(validRate, otherCurrency);
-        var updatedExchangeRate = rateFor(validRate + 0.1, otherCurrency);
+        var exchangeRate = DomainUtility.rateFor(validRate, otherCurrency);
+        var updatedExchangeRate = DomainUtility.rateFor(validRate + 0.1, otherCurrency);
 
         assertThat(withPivotCurrency(pivotCurrency)
                 .add(exchangeRate)
@@ -62,7 +62,7 @@ public class BankProperties {
 
         assertThat(withPivotCurrency(pivotCurrency)
                 .convert(money, otherCurrency))
-                .containsOnLeft(error(money.currency() + "->" + otherCurrency));
+                .containsOnLeft(DomainUtility.error(money.currency() + "->" + otherCurrency));
     }
 
     @Property
@@ -77,11 +77,11 @@ public class BankProperties {
     public void convertAnyMoneyToMoneyCurrencyReturnMoneyItself(
             Currency pivotCurrency,
             @From(MoneyGenerator.class) Money money,
-            @InRange(min = MINIMUM_RATE, max = MAXIMUM_RATE) double validRate) {
+            @InRange(min = DomainUtility.MINIMUM_RATE, max = DomainUtility.MAXIMUM_RATE) double validRate) {
         notPivotCurrency(pivotCurrency, money.currency());
 
         assertThat(withPivotCurrency(pivotCurrency)
-                .add(rateFor(validRate, money.currency()))
+                .add(DomainUtility.rateFor(validRate, money.currency()))
                 .flatMap(newBank -> newBank.convert(money, money.currency())))
                 .containsOnRight(money);
     }

@@ -1,12 +1,13 @@
-package money_problem.domain;
+package money_problem.unit.domain;
 
+import money_problem.domain.Bank;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static money_problem.domain.Bank.withPivotCurrency;
 import static money_problem.domain.Currency.*;
-import static money_problem.domain.DomainUtility.*;
+import static money_problem.unit.domain.DomainUtility.*;
 import static org.assertj.vavr.api.VavrAssertions.assertThat;
 
 class PortfolioTest {

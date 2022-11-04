@@ -1,10 +1,10 @@
-package money_problem.domain;
+package money_problem.unit.domain;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static money_problem.domain.DomainUtility.euros;
-import static money_problem.domain.DomainUtility.koreanWons;
+import static money_problem.unit.domain.DomainUtility.euros;
+import static money_problem.unit.domain.DomainUtility.koreanWons;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class MoneyTest {

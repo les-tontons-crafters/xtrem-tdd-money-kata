@@ -1,5 +1,8 @@
-package money_problem.domain;
+package money_problem.unit.domain;
 
+import money_problem.domain.Bank;
+import money_problem.domain.Currency;
+import money_problem.domain.Money;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -7,7 +10,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.stream.Stream;
 
 import static money_problem.domain.Currency.*;
-import static money_problem.domain.DomainUtility.*;
+import static money_problem.unit.domain.DomainUtility.*;
 import static org.assertj.vavr.api.VavrAssertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.of;
 

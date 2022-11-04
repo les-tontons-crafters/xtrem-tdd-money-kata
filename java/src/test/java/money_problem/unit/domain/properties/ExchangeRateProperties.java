@@ -1,4 +1,4 @@
-package money_problem.domain.properties;
+package money_problem.unit.domain.properties;
 
 import com.pholser.junit.quickcheck.Property;
 import com.pholser.junit.quickcheck.generator.InRange;
