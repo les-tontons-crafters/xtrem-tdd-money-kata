@@ -22,6 +22,7 @@
         <junit-quickcheck.version>1.0</junit-quickcheck.version>
         <cucumber.version>7.8.1</cucumber.version>
         <slf4j.version>2.0.3</slf4j.version>
+        <mockito-core.version>4.8.1</mockito-core.version>
     </properties>
 
     <build>
@@ -126,6 +127,12 @@
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-junit</artifactId>
             <version>${cucumber.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito-core.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

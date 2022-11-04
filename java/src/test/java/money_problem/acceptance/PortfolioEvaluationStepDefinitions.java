@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.offset;
 import static org.assertj.vavr.api.VavrAssertions.assertThat;
 
 public class PortfolioEvaluationStepDefinitions {
-    private final SetupBankUseCase setupBankUseCase = new SetupBankUseCase();
+    private final SetupBankUseCase setupBankUseCase = new SetupBankUseCase(null);
     private final AddExchangeRateUseCase addExchangeRateUseCase = new AddExchangeRateUseCase();
     private final AddMoneyInPortfolioUseCase addInPortfolioUseCase = new AddMoneyInPortfolioUseCase();
     private final EvaluatePortfolioUseCase evaluatePortfolioUseCase = new EvaluatePortfolioUseCase();
