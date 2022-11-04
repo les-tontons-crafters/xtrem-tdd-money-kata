@@ -5,14 +5,14 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
 import money_problem.domain.Currency;
 import money_problem.domain.Money;
-import money_problem.usecases.add_exchange_rate.AddExchangeRate;
+import money_problem.usecases.add_exchange_rate.AddExchangeRateCommand;
 import money_problem.usecases.add_exchange_rate.AddExchangeRateUseCase;
 import money_problem.usecases.add_money_in_portfolio.AddInPortfolio;
 import money_problem.usecases.add_money_in_portfolio.AddMoneyInPortfolioUseCase;
 import money_problem.usecases.evaluate_portfolio.EvaluatePortfolio;
 import money_problem.usecases.evaluate_portfolio.EvaluatePortfolioUseCase;
 import money_problem.usecases.evaluate_portfolio.EvaluationResult;
-import money_problem.usecases.setup_bank.SetupBank;
+import money_problem.usecases.setup_bank.SetupBankCommand;
 import money_problem.usecases.setup_bank.SetupBankUseCase;
 import org.assertj.core.api.Assertions;
 
@@ -28,12 +28,12 @@ public class PortfolioEvaluationStepDefinitions {
 
     @Given("our Bank system with {word} as Pivot Currency")
     public void bankWithPivot(String currency) {
-        setupBankUseCase.invoke(new SetupBank(parseCurrency(currency)));
+        setupBankUseCase.invoke(new SetupBankCommand(parseCurrency(currency)));
     }
 
     @And("exchange rate of {double} defined for {word}")
     public void addExchangeRate(double rate, String currency) {
-        addExchangeRateUseCase.invoke(new AddExchangeRate(rate, parseCurrency(currency)));
+        addExchangeRateUseCase.invoke(new AddExchangeRateCommand(rate, parseCurrency(currency)));
     }
 
     @Given("an existing portfolio")

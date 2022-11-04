@@ -13,7 +13,7 @@ import static money_problem.domain.Bank.withPivotCurrency;
 import static money_problem.usecases.common.Success.emptySuccess;
 import static money_problem.usecases.common.UseCaseError.error;
 
-public class SetupBankUseCase implements UseCase<SetupBank, Void> {
+public class SetupBankUseCase implements UseCase<SetupBankCommand, Void> {
     private final BankRepository bankRepository;
 
     public SetupBankUseCase(BankRepository bankRepository) {
@@ -21,7 +21,7 @@ public class SetupBankUseCase implements UseCase<SetupBank, Void> {
     }
 
     @Override
-    public Either<UseCaseError, Success<Void>> invoke(SetupBank setupBank) {
+    public Either<UseCaseError, Success<Void>> invoke(SetupBankCommand setupBank) {
         return bankRepository.exists()
                 ? left(error("Bank is already setup"))
                 : right(setupBank(setupBank.currency()));

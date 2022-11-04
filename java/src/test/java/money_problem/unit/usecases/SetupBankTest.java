@@ -2,7 +2,7 @@ package money_problem.unit.usecases;
 
 import money_problem.domain.Bank;
 import money_problem.usecases.ports.BankRepository;
-import money_problem.usecases.setup_bank.SetupBank;
+import money_problem.usecases.setup_bank.SetupBankCommand;
 import money_problem.usecases.setup_bank.SetupBankUseCase;
 import org.junit.jupiter.api.Test;
 
@@ -15,7 +15,7 @@ import static org.mockito.Mockito.*;
 class SetupBankTest {
     private final BankRepository bankRepositoryMock = mock(BankRepository.class);
     private final SetupBankUseCase setupBankUseCase = new SetupBankUseCase(bankRepositoryMock);
-    private final SetupBank setupBankCommand = new SetupBank(EUR);
+    private final SetupBankCommand setupBankCommand = new SetupBankCommand(EUR);
 
     @Test
     void return_an_error_when_bank_already_setup() {
