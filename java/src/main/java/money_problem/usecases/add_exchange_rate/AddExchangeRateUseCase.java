@@ -1,23 +1,35 @@
 package money_problem.usecases.add_exchange_rate;
 
 import io.vavr.control.Either;
+import money_problem.domain.Bank;
 import money_problem.domain.Error;
 import money_problem.domain.ExchangeRate;
 import money_problem.usecases.Success;
 import money_problem.usecases.UseCaseError;
+import money_problem.usecases.ports.BankRepository;
 
-import static io.vavr.control.Either.left;
 import static money_problem.domain.ExchangeRate.from;
+import static money_problem.usecases.Success.emptySuccess;
 import static money_problem.usecases.UseCaseError.error;
 
 public class AddExchangeRateUseCase {
+    private final BankRepository bankRepository;
+
+    public AddExchangeRateUseCase(BankRepository bankRepository) {
+        this.bankRepository = bankRepository;
+    }
+
     public Either<UseCaseError, Success<Void>> invoke(AddExchangeRate addExchangeRate) {
         return from(addExchangeRate.rate(), addExchangeRate.currency())
                 .flatMap(this::addExchangeRate)
+                .map(bank -> emptySuccess())
                 .mapLeft(domainError -> error(domainError.message()));
     }
 
-    private Either<Error, Success<Void>> addExchangeRate(ExchangeRate rate) {
-        return left(new Error("No bank defined"));
+    private Either<Error, Bank> addExchangeRate(ExchangeRate rate) {
+        return bankRepository.getBank()
+                .toEither(new Error("No bank defined"))
+                .flatMap(bank -> bank.add(rate))
+                .peek(bankRepository::save);
     }
 }
