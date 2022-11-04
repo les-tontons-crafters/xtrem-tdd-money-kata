@@ -13,8 +13,8 @@ import static org.assertj.vavr.api.VavrAssertions.assertThat;
 import static org.mockito.Mockito.*;
 
 class SetupBankTest {
-    private final BankRepository bankRepository = mock(BankRepository.class);
-    private final SetupBankUseCase setupBankUseCase = new SetupBankUseCase(bankRepository);
+    private final BankRepository bankRepositoryMock = mock(BankRepository.class);
+    private final SetupBankUseCase setupBankUseCase = new SetupBankUseCase(bankRepositoryMock);
     private final SetupBank setupBankCommand = new SetupBank(EUR);
 
     @Test
@@ -36,15 +36,15 @@ class SetupBankTest {
     }
 
     private void bankAlreadySetup() {
-        when(bankRepository.exists()).thenReturn(true);
+        when(bankRepositoryMock.exists()).thenReturn(true);
     }
 
     private void bankNotSetup() {
-        when(bankRepository.exists()).thenReturn(false);
+        when(bankRepositoryMock.exists()).thenReturn(false);
     }
 
     private void bankHasBeenSaved() {
-        verify(bankRepository, times(1))
+        verify(bankRepositoryMock, times(1))
                 .save(any(Bank.class));
     }
 }

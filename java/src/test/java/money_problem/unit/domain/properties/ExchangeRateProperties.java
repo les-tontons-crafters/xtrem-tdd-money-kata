@@ -5,10 +5,9 @@ import com.pholser.junit.quickcheck.generator.InRange;
 import com.pholser.junit.quickcheck.runner.JUnitQuickcheck;
 import money_problem.domain.Currency;
 import money_problem.domain.Error;
-import money_problem.domain.ExchangeRate;
-import org.assertj.vavr.api.VavrAssertions;
 import org.junit.runner.RunWith;
 
+import static money_problem.domain.ExchangeRate.from;
 import static org.assertj.vavr.api.VavrAssertions.assertThat;
 
 @RunWith(JUnitQuickcheck.class)
@@ -17,7 +16,7 @@ public class ExchangeRateProperties {
     public void canNotUseANegativeDoubleOrZeroAsExchangeRate(
             @InRange(max = "0") double invalidAmount,
             Currency anyCurrency) {
-        VavrAssertions.assertThat(ExchangeRate.from(invalidAmount, anyCurrency))
+        assertThat(from(invalidAmount, anyCurrency))
                 .containsOnLeft(new Error("Exchange rate should be greater than 0"));
     }
 }
