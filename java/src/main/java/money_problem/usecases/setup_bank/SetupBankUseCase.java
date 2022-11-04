@@ -3,6 +3,7 @@ package money_problem.usecases.setup_bank;
 import io.vavr.control.Either;
 import money_problem.domain.Currency;
 import money_problem.usecases.Success;
+import money_problem.usecases.UseCase;
 import money_problem.usecases.UseCaseError;
 import money_problem.usecases.ports.BankRepository;
 
@@ -12,13 +13,14 @@ import static money_problem.domain.Bank.withPivotCurrency;
 import static money_problem.usecases.Success.emptySuccess;
 import static money_problem.usecases.UseCaseError.error;
 
-public class SetupBankUseCase {
+public class SetupBankUseCase implements UseCase<SetupBank, Void> {
     private final BankRepository bankRepository;
 
     public SetupBankUseCase(BankRepository bankRepository) {
         this.bankRepository = bankRepository;
     }
 
+    @Override
     public Either<UseCaseError, Success<Void>> invoke(SetupBank setupBank) {
         return bankRepository.exists()
                 ? left(error("Bank is already setup"))
