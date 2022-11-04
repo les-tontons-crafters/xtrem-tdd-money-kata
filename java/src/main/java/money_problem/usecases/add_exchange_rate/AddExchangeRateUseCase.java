@@ -5,6 +5,7 @@ import money_problem.domain.Bank;
 import money_problem.domain.Error;
 import money_problem.domain.ExchangeRate;
 import money_problem.usecases.common.Success;
+import money_problem.usecases.common.Unit;
 import money_problem.usecases.common.UseCase;
 import money_problem.usecases.common.UseCaseError;
 import money_problem.usecases.ports.BankRepository;
@@ -13,7 +14,7 @@ import static money_problem.domain.ExchangeRate.from;
 import static money_problem.usecases.common.Success.emptySuccess;
 import static money_problem.usecases.common.UseCaseError.error;
 
-public class AddExchangeRateUseCase implements UseCase<AddExchangeRateCommand, Void> {
+public class AddExchangeRateUseCase implements UseCase<AddExchangeRateCommand, Unit> {
     private final BankRepository bankRepository;
 
     public AddExchangeRateUseCase(BankRepository bankRepository) {
@@ -21,7 +22,7 @@ public class AddExchangeRateUseCase implements UseCase<AddExchangeRateCommand, V
     }
 
     @Override
-    public Either<UseCaseError, Success<Void>> invoke(AddExchangeRateCommand addExchangeRate) {
+    public Either<UseCaseError, Success<Unit>> invoke(AddExchangeRateCommand addExchangeRate) {
         return from(addExchangeRate.rate(), addExchangeRate.currency())
                 .flatMap(this::addExchangeRate)
                 .map(bank -> emptySuccess())

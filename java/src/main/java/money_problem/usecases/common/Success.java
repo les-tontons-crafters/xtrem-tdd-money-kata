@@ -1,7 +1,9 @@
 package money_problem.usecases.common;
 
-public record Success<T>() {
-    public static Success<Void> emptySuccess() {
-        return new Success<>();
+import static money_problem.usecases.common.Unit.unit;
+
+public record Success<T>(T value) {
+    public static Success<Unit> emptySuccess() {
+        return new Success<>(unit());
     }
 }
