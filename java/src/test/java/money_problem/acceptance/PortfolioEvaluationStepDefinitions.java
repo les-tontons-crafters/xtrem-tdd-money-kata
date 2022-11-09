@@ -1,8 +1,10 @@
 package money_problem.acceptance;
 
+import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
+import io.vavr.Tuple;
 import money_problem.acceptance.adapters.BankRepositoryFake;
 import money_problem.acceptance.adapters.PortfolioRepositoryFake;
 import money_problem.domain.Currency;
@@ -22,6 +24,7 @@ import money_problem.usecases.setup_bank.SetupBankUseCase;
 import org.assertj.core.api.Assertions;
 
 import static io.vavr.collection.List.of;
+import static java.lang.Double.parseDouble;
 import static org.assertj.core.api.Assertions.offset;
 import static org.assertj.vavr.api.VavrAssertions.assertThat;
 
@@ -43,23 +46,27 @@ public class PortfolioEvaluationStepDefinitions {
         addExchangeRateUseCase.invoke(new AddExchangeRateCommand(rate, parseCurrency(currency)));
     }
 
-    @Given("an existing portfolio")
-    public void anExistingPortfolio() {
+    @Given("an existing portfolio containing")
+    public void anExistingPortfolioContaining(DataTable moneys) {
         portfolioRepositoryFake.save(new Portfolio());
+        moneys.asLists(String.class)
+                .stream()
+                .map(row -> new AddInPortfolio(parseDouble(row.get(0)), parseCurrency(row.get(1))))
+                .forEach(addInPortfolioUseCase::invoke);
     }
 
-    @And("our customer adds {double} {word} on their portfolio")
-    public void addInPortfolio(double amount, String currency) {
-        addInPortfolioUseCase.invoke(new AddInPortfolio(amount, parseCurrency(currency)));
-    }
-
-    @When("they evaluate their portfolio in {word} the amount should be {double}")
-    public void evaluate(String currency, double expectedAmount) {
-        var parsedCurrency = parseCurrency(currency);
-        var evaluationResult = evaluatePortfolioUseCase.invoke(new EvaluatePortfolio(parsedCurrency));
-
-        assertThat(evaluationResult)
-                .hasRightValueSatisfying(received -> assertClosedTo(received, new Money(expectedAmount, parsedCurrency)));
+    @When("they evaluate their portfolio in the given currency the result should be")
+    public void evaluate(DataTable evaluations) {
+        evaluations.asLists(String.class)
+                .stream()
+                .map(row -> Tuple.of(parseDouble(row.get(0)), parseCurrency(row.get(1))))
+                .forEach(expectedResult -> {
+                    var evaluationResult = evaluatePortfolioUseCase.invoke(new EvaluatePortfolio(expectedResult._2));
+                    assertThat(evaluationResult)
+                            .hasRightValueSatisfying(received ->
+                                    assertClosedTo(received, new Money(expectedResult._1, expectedResult._2))
+                            );
+                });
     }
 
     private void assertClosedTo(EvaluationResult evaluationResult, Money expected) {
@@ -73,7 +80,3 @@ public class PortfolioEvaluationStepDefinitions {
                 .get();
     }
 }
-
-
-
-
