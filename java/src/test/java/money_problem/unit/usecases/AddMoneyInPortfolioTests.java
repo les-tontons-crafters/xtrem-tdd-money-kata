@@ -25,9 +25,13 @@ public class AddMoneyInPortfolioTests {
 
     @Property
     public void return_a_success_for_any_amount_and_rate(@From(AddInPortfolioGenerator.class) AddInPortfolio command) {
-        when(portfolioRepositoryMock.get()).thenReturn(new Portfolio());
+        existingPortfolio();
         assertThat(addMoneyInPortfolioUseCase.invoke(command)).isRight();
         portfolioHasBeenSaved();
+    }
+
+    private void existingPortfolio() {
+        when(portfolioRepositoryMock.get()).thenReturn(new Portfolio());
     }
 
     private void portfolioHasBeenSaved() {
