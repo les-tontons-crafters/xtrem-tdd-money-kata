@@ -4,14 +4,13 @@ import io.vavr.control.Either;
 import money_problem.domain.Bank;
 import money_problem.domain.Error;
 import money_problem.domain.ExchangeRate;
-import money_problem.usecases.common.Success;
 import money_problem.usecases.common.Unit;
 import money_problem.usecases.common.UseCase;
 import money_problem.usecases.common.UseCaseError;
 import money_problem.usecases.ports.BankRepository;
 
 import static money_problem.domain.ExchangeRate.from;
-import static money_problem.usecases.common.Success.emptySuccess;
+import static money_problem.usecases.common.Unit.unit;
 import static money_problem.usecases.common.UseCaseError.error;
 
 public class AddExchangeRateUseCase implements UseCase<AddExchangeRateCommand, Unit> {
@@ -22,10 +21,10 @@ public class AddExchangeRateUseCase implements UseCase<AddExchangeRateCommand, U
     }
 
     @Override
-    public Either<UseCaseError, Success<Unit>> invoke(AddExchangeRateCommand addExchangeRate) {
+    public Either<UseCaseError, Unit> invoke(AddExchangeRateCommand addExchangeRate) {
         return from(addExchangeRate.rate(), addExchangeRate.currency())
                 .flatMap(this::addExchangeRate)
-                .map(bank -> emptySuccess())
+                .map(bank -> unit())
                 .mapLeft(domainError -> error(domainError.message()));
     }
 

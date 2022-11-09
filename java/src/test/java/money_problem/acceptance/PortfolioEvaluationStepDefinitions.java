@@ -51,7 +51,7 @@ public class PortfolioEvaluationStepDefinitions {
         var evaluationResult = evaluatePortfolioUseCase.invoke(new EvaluatePortfolio(parsedCurrency));
 
         assertThat(evaluationResult)
-                .hasRightValueSatisfying(received -> assertClosedTo(received.value(), new Money(expectedAmount, parsedCurrency)));
+                .hasRightValueSatisfying(received -> assertClosedTo(received, new Money(expectedAmount, parsedCurrency)));
     }
 
     private void assertClosedTo(EvaluationResult evaluationResult, Money expected) {

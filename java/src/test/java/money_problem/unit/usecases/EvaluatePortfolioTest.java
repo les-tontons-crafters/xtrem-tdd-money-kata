@@ -95,8 +95,8 @@ class EvaluatePortfolioTest {
         private void assertSuccess(double expectedAmount, Currency expectedCurrency) {
             assertThat(evaluatePortfolioUseCase.invoke(evaluateIn(USD)))
                     .hasRightValueSatisfying(result -> {
-                        Assertions.assertThat(result.value().amount()).isCloseTo(expectedAmount, offset(0.001d));
-                        Assertions.assertThat(result.value().currency()).isEqualTo(expectedCurrency);
+                        Assertions.assertThat(result.amount()).isCloseTo(expectedAmount, offset(0.001d));
+                        Assertions.assertThat(result.currency()).isEqualTo(expectedCurrency);
                     });
         }
     }

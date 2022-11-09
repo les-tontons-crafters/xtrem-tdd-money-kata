@@ -13,7 +13,7 @@ import static io.vavr.API.Some;
 import static io.vavr.control.Option.none;
 import static money_problem.domain.Currency.EUR;
 import static money_problem.domain.Currency.USD;
-import static money_problem.usecases.common.Success.emptySuccess;
+import static money_problem.usecases.common.Unit.unit;
 import static money_problem.usecases.common.UseCaseError.error;
 import static org.assertj.vavr.api.VavrAssertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -76,7 +76,7 @@ class AddExchangeRateTest {
             var aValidExchangeRate = new AddExchangeRateCommand(1, USD);
 
             assertThat(addExchangeRateUseCase.invoke(aValidExchangeRate))
-                    .containsOnRight(emptySuccess());
+                    .containsOnRight(unit());
 
             bankHasBeenSaved();
         }
