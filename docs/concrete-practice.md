@@ -82,7 +82,7 @@ In this workshop, we will make those iterations in this order:
 8. [Property-Based Testing to challenge our Domain Model](facilitation/08.bank-properties.md)
 9. [Shared understanding on the Bank with Example Mapping](facilitation/09.bank-example-mapping.md)
 10. [Redesign the Bank](facilitation/10.redesign-bank.md)
-11. [Add an Acceptance Test](facilitation/10.redesign-bank.md)
+11. [Add an Acceptance Test](facilitation/11.acceptance-tests.md)
 
 ### Solution
 We have created 1 branch per iteration solution
