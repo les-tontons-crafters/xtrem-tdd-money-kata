@@ -1,21 +1,25 @@
 package money_problem.unit.usecases;
 
-import money_problem.domain.Bank;
 import money_problem.domain.Currency;
+import money_problem.domain.ExchangeRate;
 import money_problem.domain.Portfolio;
 import money_problem.usecases.evaluate_portfolio.EvaluatePortfolio;
 import money_problem.usecases.evaluate_portfolio.EvaluatePortfolioUseCase;
 import money_problem.usecases.ports.BankRepository;
 import money_problem.usecases.ports.PortfolioRepository;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static io.vavr.API.Some;
+import static io.vavr.collection.List.of;
 import static io.vavr.control.Option.none;
-import static money_problem.domain.Currency.EUR;
+import static money_problem.domain.Bank.withPivotCurrency;
+import static money_problem.domain.Currency.*;
 import static money_problem.unit.domain.DomainUtility.*;
 import static money_problem.usecases.common.UseCaseError.error;
+import static org.assertj.core.api.Assertions.offset;
 import static org.assertj.vavr.api.VavrAssertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -25,9 +29,14 @@ class EvaluatePortfolioTest {
     private final PortfolioRepository portfolioRepositoryMock = mock(PortfolioRepository.class);
     private final EvaluatePortfolioUseCase evaluatePortfolioUseCase = new EvaluatePortfolioUseCase(bankRepositoryMock, portfolioRepositoryMock);
 
-    private void setupBankWithPivot(Currency pivotCurrency) {
+    private void setupBank(Currency pivotCurrency, ExchangeRate... rates) {
         when(bankRepositoryMock.getBank())
-                .thenReturn(Some(Bank.withPivotCurrency(pivotCurrency)));
+                .thenReturn(
+                        Some(of(rates).foldLeft(
+                                withPivotCurrency(pivotCurrency),
+                                (b, rate) -> b.add(rate).get())
+                        )
+                );
     }
 
     private void setupPortfolio(Portfolio portfolio) {
@@ -52,7 +61,7 @@ class EvaluatePortfolioTest {
 
         @Test
         void when_missing_rates() {
-            setupBankWithPivot(EUR);
+            setupBank(EUR);
             setupPortfolio(portfolioWith(dollars(1), koreanWons(1)));
 
             assertError(evaluateIn(EUR), "Missing exchange rate(s): [USD->EUR],[KRW->EUR]");
@@ -68,11 +77,27 @@ class EvaluatePortfolioTest {
     class return_a_success {
         @BeforeEach
         void setup() {
-            setupBankWithPivot(EUR);
+            setupBank(EUR);
         }
 
         @Test
         void when_evaluating_empty_portfolio() {
+            setupBank(EUR, rateFor(1.2, USD), rateFor(1344, KRW));
+            setupPortfolio(portfolioWith(
+                    euros(3992),
+                    dollars(4567),
+                    koreanWons(-30543),
+                    dollars(8967.89))
+            );
+            assertSuccess(18298.02, USD);
+        }
+
+        private void assertSuccess(double expectedAmount, Currency expectedCurrency) {
+            assertThat(evaluatePortfolioUseCase.invoke(evaluateIn(USD)))
+                    .hasRightValueSatisfying(result -> {
+                        Assertions.assertThat(result.value().amount()).isCloseTo(expectedAmount, offset(0.001d));
+                        Assertions.assertThat(result.value().currency()).isEqualTo(expectedCurrency);
+                    });
         }
     }
 }

@@ -24,8 +24,12 @@ public class EvaluatePortfolioUseCase implements UseCase<EvaluatePortfolio, Eval
         return bankRepository.getBank()
                 .toEither(new Error("No bank defined"))
                 .flatMap(bank -> evaluatePortfolio(bank, command))
-                .map(money -> Success.of(EvaluationResult.ZERO))
+                .map(money -> Success.of(mapToResult(money)))
                 .mapLeft(error -> new UseCaseError(error.message()));
+    }
+
+    private EvaluationResult mapToResult(Money money) {
+        return new EvaluationResult(money.amount(), money.currency());
     }
 
     private Either<Error, Money> evaluatePortfolio(Bank bank, EvaluatePortfolio command) {
