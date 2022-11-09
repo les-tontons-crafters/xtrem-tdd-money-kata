@@ -21,7 +21,17 @@ import static org.mockito.Mockito.*;
 
 class AddExchangeRateTest {
     private final BankRepository bankRepositoryMock = mock(BankRepository.class);
-    private final AddExchangeRateUseCase addExchangeRate = new AddExchangeRateUseCase(bankRepositoryMock);
+    private final AddExchangeRateUseCase addExchangeRateUseCase = new AddExchangeRateUseCase(bankRepositoryMock);
+
+    private void setupBankWithPivot(Currency pivotCurrency) {
+        when(bankRepositoryMock.getBank())
+                .thenReturn(Some(Bank.withPivotCurrency(pivotCurrency)));
+    }
+
+    private void bankHasBeenSaved() {
+        verify(bankRepositoryMock, times(1))
+                .save(any(Bank.class));
+    }
 
     @Nested
     class return_an_error {
@@ -53,7 +63,7 @@ class AddExchangeRateTest {
         }
 
         private void assertError(AddExchangeRateCommand invalidExchangeRate, String message) {
-            assertThat(addExchangeRate.invoke(invalidExchangeRate))
+            assertThat(addExchangeRateUseCase.invoke(invalidExchangeRate))
                     .containsOnLeft(error(message));
         }
     }
@@ -65,20 +75,10 @@ class AddExchangeRateTest {
             setupBankWithPivot(EUR);
             var aValidExchangeRate = new AddExchangeRateCommand(1, USD);
 
-            assertThat(addExchangeRate.invoke(aValidExchangeRate))
+            assertThat(addExchangeRateUseCase.invoke(aValidExchangeRate))
                     .containsOnRight(emptySuccess());
 
             bankHasBeenSaved();
         }
-    }
-
-    private void setupBankWithPivot(Currency pivotCurrency) {
-        when(bankRepositoryMock.getBank())
-                .thenReturn(Some(Bank.withPivotCurrency(pivotCurrency)));
-    }
-
-    private void bankHasBeenSaved() {
-        verify(bankRepositoryMock, times(1))
-                .save(any(Bank.class));
     }
 }

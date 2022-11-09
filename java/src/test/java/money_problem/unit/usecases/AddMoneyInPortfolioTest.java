@@ -19,7 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @RunWith(JUnitQuickcheck.class)
-public class AddMoneyInPortfolioTests {
+public class AddMoneyInPortfolioTest {
     private final PortfolioRepository portfolioRepositoryMock = mock(PortfolioRepository.class);
     private final AddMoneyInPortfolioUseCase addMoneyInPortfolioUseCase = new AddMoneyInPortfolioUseCase(portfolioRepositoryMock);
 

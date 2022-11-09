@@ -24,7 +24,7 @@ public class PortfolioEvaluationStepDefinitions {
     private final SetupBankUseCase setupBankUseCase = new SetupBankUseCase(null);
     private final AddExchangeRateUseCase addExchangeRateUseCase = new AddExchangeRateUseCase(null);
     private final AddMoneyInPortfolioUseCase addInPortfolioUseCase = new AddMoneyInPortfolioUseCase(null);
-    private final EvaluatePortfolioUseCase evaluatePortfolioUseCase = new EvaluatePortfolioUseCase();
+    private final EvaluatePortfolioUseCase evaluatePortfolioUseCase = new EvaluatePortfolioUseCase(null, null);
 
     @Given("our Bank system with {word} as Pivot Currency")
     public void bankWithPivot(String currency) {
