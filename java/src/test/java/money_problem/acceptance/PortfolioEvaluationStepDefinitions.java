@@ -23,7 +23,7 @@ import static org.assertj.vavr.api.VavrAssertions.assertThat;
 public class PortfolioEvaluationStepDefinitions {
     private final SetupBankUseCase setupBankUseCase = new SetupBankUseCase(null);
     private final AddExchangeRateUseCase addExchangeRateUseCase = new AddExchangeRateUseCase(null);
-    private final AddMoneyInPortfolioUseCase addInPortfolioUseCase = new AddMoneyInPortfolioUseCase();
+    private final AddMoneyInPortfolioUseCase addInPortfolioUseCase = new AddMoneyInPortfolioUseCase(null);
     private final EvaluatePortfolioUseCase evaluatePortfolioUseCase = new EvaluatePortfolioUseCase();
 
     @Given("our Bank system with {word} as Pivot Currency")
