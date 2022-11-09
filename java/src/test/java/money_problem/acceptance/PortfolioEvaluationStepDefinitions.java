@@ -45,7 +45,7 @@ public class PortfolioEvaluationStepDefinitions {
         addInPortfolioUseCase.invoke(new AddInPortfolio(amount, parseCurrency(currency)));
     }
 
-    @When("they evaluate their portfolio in {word} the amount should be closed to {double}")
+    @When("they evaluate their portfolio in {word} the amount should be {double}")
     public void evaluate(String currency, double expectedAmount) {
         var parsedCurrency = parseCurrency(currency);
         var evaluationResult = evaluatePortfolioUseCase.invoke(new EvaluatePortfolio(parsedCurrency));

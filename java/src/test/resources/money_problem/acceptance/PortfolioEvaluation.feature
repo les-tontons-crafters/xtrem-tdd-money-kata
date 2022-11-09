@@ -12,4 +12,4 @@ Feature: Portfolio evaluation
     And our customer adds 5674567.245 KRW on their portfolio
     And our customer adds 9432 USD on their portfolio
     And our customer adds 4989.67 EUR on their portfolio
-    When they evaluate their portfolio in EUR the amount should be closed to 21804.227
+    When they evaluate their portfolio in EUR the amount should be 21804.227
