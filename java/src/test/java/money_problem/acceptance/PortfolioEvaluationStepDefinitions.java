@@ -3,8 +3,11 @@ package money_problem.acceptance;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
+import money_problem.acceptance.adapters.BankRepositoryFake;
+import money_problem.acceptance.adapters.PortfolioRepositoryFake;
 import money_problem.domain.Currency;
 import money_problem.domain.Money;
+import money_problem.domain.Portfolio;
 import money_problem.usecases.add_exchange_rate.AddExchangeRateCommand;
 import money_problem.usecases.add_exchange_rate.AddExchangeRateUseCase;
 import money_problem.usecases.add_money_in_portfolio.AddInPortfolio;
@@ -12,6 +15,8 @@ import money_problem.usecases.add_money_in_portfolio.AddMoneyInPortfolioUseCase;
 import money_problem.usecases.evaluate_portfolio.EvaluatePortfolio;
 import money_problem.usecases.evaluate_portfolio.EvaluatePortfolioUseCase;
 import money_problem.usecases.evaluate_portfolio.EvaluationResult;
+import money_problem.usecases.ports.BankRepository;
+import money_problem.usecases.ports.PortfolioRepository;
 import money_problem.usecases.setup_bank.SetupBankCommand;
 import money_problem.usecases.setup_bank.SetupBankUseCase;
 import org.assertj.core.api.Assertions;
@@ -21,10 +26,12 @@ import static org.assertj.core.api.Assertions.offset;
 import static org.assertj.vavr.api.VavrAssertions.assertThat;
 
 public class PortfolioEvaluationStepDefinitions {
-    private final SetupBankUseCase setupBankUseCase = new SetupBankUseCase(null);
-    private final AddExchangeRateUseCase addExchangeRateUseCase = new AddExchangeRateUseCase(null);
-    private final AddMoneyInPortfolioUseCase addInPortfolioUseCase = new AddMoneyInPortfolioUseCase(null);
-    private final EvaluatePortfolioUseCase evaluatePortfolioUseCase = new EvaluatePortfolioUseCase(null, null);
+    private final BankRepository bankRepositoryFake = new BankRepositoryFake();
+    private final PortfolioRepository portfolioRepositoryFake = new PortfolioRepositoryFake();
+    private final SetupBankUseCase setupBankUseCase = new SetupBankUseCase(bankRepositoryFake);
+    private final AddExchangeRateUseCase addExchangeRateUseCase = new AddExchangeRateUseCase(bankRepositoryFake);
+    private final AddMoneyInPortfolioUseCase addInPortfolioUseCase = new AddMoneyInPortfolioUseCase(portfolioRepositoryFake);
+    private final EvaluatePortfolioUseCase evaluatePortfolioUseCase = new EvaluatePortfolioUseCase(bankRepositoryFake, portfolioRepositoryFake);
 
     @Given("our Bank system with {word} as Pivot Currency")
     public void bankWithPivot(String currency) {
@@ -38,6 +45,7 @@ public class PortfolioEvaluationStepDefinitions {
 
     @Given("an existing portfolio")
     public void anExistingPortfolio() {
+        portfolioRepositoryFake.save(new Portfolio());
     }
 
     @And("our customer adds {double} {word} on their portfolio")
