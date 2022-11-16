@@ -37,10 +37,7 @@ class Bank private constructor(
     fun convert(money: Money, to: Currency): Either<Error, Money> =
         convert.filterKeys { canConvert -> canConvert(money, to) }
             .firstNotNullOfOrNull { convert -> convert.value(money, to) }
-            .let { toEither(it, money.currency, to) }
-
-    private fun toEither(result: Money?, from: Currency, to: Currency): Either<Error, Money> =
-        if (result != null) right(result) else left(Error(keyFor(from, to)))
+            .toEither(money.currency, to)
 
     private fun canConvertDirectly(money: Money, to: Currency): Boolean =
         exchangeRates.containsKey(keyFor(money.currency, to))
@@ -59,6 +56,9 @@ class Bank private constructor(
     companion object {
         @JvmStatic
         fun withPivotCurrency(pivotCurrency: Currency): Bank = Bank(pivotCurrency)
-        private fun keyFor(from: Currency?, to: Currency?): String = from.toString() + "->" + to
+        private fun keyFor(from: Currency, to: Currency): String = "$from->$to"
+
+        private fun Money?.toEither(from: Currency, to: Currency): Either<Error, Money> =
+            if (this != null) right(this) else left(Error(keyFor(from, to)))
     }
 }
