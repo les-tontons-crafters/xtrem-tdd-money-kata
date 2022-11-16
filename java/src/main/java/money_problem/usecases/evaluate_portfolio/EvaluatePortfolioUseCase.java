@@ -24,11 +24,11 @@ public class EvaluatePortfolioUseCase implements UseCase<EvaluatePortfolio, Eval
                 .toEither(new Error("No bank defined"))
                 .flatMap(bank -> evaluatePortfolio(bank, command))
                 .map(this::mapToResult)
-                .mapLeft(error -> new UseCaseError(error.message()));
+                .mapLeft(error -> new UseCaseError(error.getMessage()));
     }
 
     private EvaluationResult mapToResult(Money money) {
-        return new EvaluationResult(money.amount(), money.currency());
+        return new EvaluationResult(money.getAmount(), money.getCurrency());
     }
 
     private Either<Error, Money> evaluatePortfolio(Bank bank, EvaluatePortfolio command) {

@@ -25,7 +25,7 @@ public class AddExchangeRateUseCase implements UseCase<AddExchangeRateCommand, U
         return from(addExchangeRate.rate(), addExchangeRate.currency())
                 .flatMap(this::addExchangeRate)
                 .map(bank -> unit())
-                .mapLeft(domainError -> error(domainError.message()));
+                .mapLeft(domainError -> error(domainError.getMessage()));
     }
 
     private Either<Error, Bank> addExchangeRate(ExchangeRate rate) {

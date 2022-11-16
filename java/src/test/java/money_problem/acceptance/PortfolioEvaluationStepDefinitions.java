@@ -70,8 +70,8 @@ public class PortfolioEvaluationStepDefinitions {
     }
 
     private void assertClosedTo(EvaluationResult evaluationResult, Money expected) {
-        Assertions.assertThat(evaluationResult.amount()).isCloseTo(expected.amount(), offset(0.001d));
-        Assertions.assertThat(evaluationResult.currency()).isEqualTo(expected.currency());
+        Assertions.assertThat(evaluationResult.amount()).isCloseTo(expected.getAmount(), offset(0.001d));
+        Assertions.assertThat(evaluationResult.currency()).isEqualTo(expected.getCurrency());
     }
 
     private Currency parseCurrency(String currency) {

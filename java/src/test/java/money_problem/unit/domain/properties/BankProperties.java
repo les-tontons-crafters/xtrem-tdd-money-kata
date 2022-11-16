@@ -58,18 +58,18 @@ public class BankProperties {
             Currency pivotCurrency,
             Currency otherCurrency,
             @From(MoneyGenerator.class) Money money) {
-        assumeTrue(money.currency() != otherCurrency);
+        assumeTrue(money.getCurrency() != otherCurrency);
 
         assertThat(withPivotCurrency(pivotCurrency)
                 .convert(money, otherCurrency))
-                .containsOnLeft(DomainUtility.error(money.currency() + "->" + otherCurrency));
+                .containsOnLeft(DomainUtility.error(money.getCurrency() + "->" + otherCurrency));
     }
 
     @Property
     public void convertAnyMoneyInPivotCurrencyToPivotCurrencyReturnMoneyItself(
             @From(MoneyGenerator.class) Money money) {
-        assertThat(withPivotCurrency(money.currency())
-                .convert(money, money.currency()))
+        assertThat(withPivotCurrency(money.getCurrency())
+                .convert(money, money.getCurrency()))
                 .containsOnRight(money);
     }
 
@@ -78,11 +78,11 @@ public class BankProperties {
             Currency pivotCurrency,
             @From(MoneyGenerator.class) Money money,
             @InRange(min = DomainUtility.MINIMUM_RATE, max = DomainUtility.MAXIMUM_RATE) double validRate) {
-        notPivotCurrency(pivotCurrency, money.currency());
+        notPivotCurrency(pivotCurrency, money.getCurrency());
 
         assertThat(withPivotCurrency(pivotCurrency)
-                .add(DomainUtility.rateFor(validRate, money.currency()))
-                .flatMap(newBank -> newBank.convert(money, money.currency())))
+                .add(DomainUtility.rateFor(validRate, money.getCurrency()))
+                .flatMap(newBank -> newBank.convert(money, money.getCurrency())))
                 .containsOnRight(money);
     }
 
