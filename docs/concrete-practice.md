@@ -83,6 +83,7 @@ In this workshop, we will make those iterations in this order:
 9. [Shared understanding on the Bank with Example Mapping](facilitation/09.bank-example-mapping.md)
 10. [Redesign the Bank](facilitation/10.redesign-bank.md)
 11. [Add an Acceptance Test](facilitation/11.acceptance-tests.md)
+12. [Functional Core, Imperative Shell](facilitation/12.functional-core-imperative-shell.md)
 
 ### Solution
 We have created 1 branch per iteration solution
