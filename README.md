@@ -46,3 +46,15 @@ We have structured this workshop using the [4C model](https://www.bowperson.com/
 - [Concepts](docs/concepts.md)
 - [Concrete Practice](docs/concrete-practice.md)
 - [Conclusion](docs/conclusion.md)
+
+## Escape Game
+In addition to this repository, we also provide an escape game based on cards that you can use to facilitate a 2/3 days training.
+
+Cards and solution are available [here](https://github.com/les-tontons-crafters/xtrem-tdd-escape-game).
+
+![xtrem tdd cards game](https://raw.githubusercontent.com/les-tontons-crafters/xtrem-tdd-escape-game/main/img/cover-xtrem-tdd.png)
+
+## Video
+We have been invited by [Valentina Cupać](https://valentinacupac.com/) to demonstrate part of this kata in her [Tech Excellence meetup](https://www.meetup.com/techexcellence/). The replay is available [here](https://www.youtube.com/live/yxO7YHkB83I?feature=share).
+
+[![Replay Xtrem TDD on Youtube](docs/img/video.png)](https://www.youtube.com/live/yxO7YHkB83I?feature=share)
